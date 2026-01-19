@@ -1,6 +1,6 @@
-# CRM - Sistema de Gestão de Clientes e Contatos
+# CRM - Sistema de GestÃ£o de Clientes e Contatos
 
-Sistema web moderno e performático para gestão de clientes (PF e PJ), contatos e relatórios de envios, conectado ao Supabase.
+Sistema web moderno e performÃ¡tico para gestÃ£o de clientes (PF e PJ), contatos e relatÃ³rios de envios, conectado ao Supabase.
 
 ## ?? Tecnologias
 
@@ -13,11 +13,11 @@ Sistema web moderno e performático para gestão de clientes (PF e PJ), contatos e
 - **TanStack React Query**
 - **react-input-mask**
 
-## ?? Pré-requisitos
+## ?? PrÃ©-requisitos
 
 - Node.js 18+ instalado
 - Conta no Supabase com projeto criado
-- Banco de dados Supabase configurado com as tabelas necessárias
+- Banco de dados Supabase configurado com as tabelas necessÃ¡rias
 
 ## ??? Estrutura do Banco de Dados
 
@@ -25,21 +25,21 @@ O sistema utiliza as seguintes tabelas no Supabase:
 
 1. **crm_clientes** - Cadastro de clientes (PF e PJ)
 2. **crm_contatos** - Cadastro de contatos
-3. **crm_clientes_contatos** - Vínculos entre clientes e contatos
-4. **relatorio_envios** - Histórico de envios (somente leitura)
+3. **crm_clientes_contatos** - VÃ­nculos entre clientes e contatos
+4. **relatorio_envios** - HistÃ³rico de envios (somente leitura)
 
-Execute o script SQL em `supabase/rls_policies.sql` para criar as políticas RLS necessárias.
+Execute o script SQL em `supabase/rls_policies.sql` para criar as polÃ­ticas RLS necessÃ¡rias.
 
-## ?? Instalação
+## ?? InstalaÃ§Ã£o
 
 1. **Clone ou baixe o projeto**
 
-2. **Instale as dependências**
+2. **Instale as dependÃªncias**
 ```bash
 npm install
 ```
 
-3. **Configure as variáveis de ambiente**
+3. **Configure as variÃ¡veis de ambiente**
 
 Crie um arquivo `.env.local` na raiz do projeto:
 
@@ -48,7 +48,7 @@ NEXT_PUBLIC_SUPABASE_URL=sua-url-do-supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon-do-supabase
 ```
 
-Você encontra essas informações no painel do Supabase em:
+VocÃª encontra essas informaÃ§Ãµes no painel do Supabase em:
 `Project Settings > API > Project URL e anon/public key`
 
 4. **Execute o projeto em modo de desenvolvimento**
@@ -59,122 +59,122 @@ npm run dev
 5. **Acesse o sistema**
 Abra [http://localhost:3000](http://localhost:3000) no navegador
 
-## ?? Autenticação
+## ?? AutenticaÃ§Ã£o
 
 O sistema usa Supabase Auth. Para fazer login:
 
-1. Crie um usuário no painel do Supabase (Authentication > Users > Add User)
+1. Crie um usuÃ¡rio no painel do Supabase (Authentication > Users > Add User)
 2. Use o e-mail e senha cadastrados para acessar o sistema
 
 ## ?? Funcionalidades
 
 ### Dashboard
-- Visão geral com cards de estatísticas
+- VisÃ£o geral com cards de estatÃ­sticas
 - Total de clientes, contatos e envios
-- Taxa de visualização dos envios
-- Links rápidos para as principais seções
+- Taxa de visualizaÃ§Ã£o dos envios
+- Links rÃ¡pidos para as principais seÃ§Ãµes
 
 ### Clientes
-- ? Listagem com busca avançada
+- ? Listagem com busca avanÃ§ada
 - ? Cadastro de clientes PF e PJ
-- ? Edição de dados cadastrais
-- ? Exclusão de clientes
+- ? EdiÃ§Ã£o de dados cadastrais
+- ? ExclusÃ£o de clientes
 - ? Gerenciamento de contatos vinculados
 - ? Definir contato principal
-- ? Máscaras de CPF/CNPJ, telefone e CEP
-- ? Validação de formulários
+- ? MÃ¡scaras de CPF/CNPJ, telefone e CEP
+- ? ValidaÃ§Ã£o de formulÃ¡rios
 
 ### Contatos
 - ? Listagem com busca
 - ? Cadastro de contatos
-- ? Edição de informações
-- ? Exclusão de contatos
-- ? Visualização de clientes vinculados
-- ? Máscaras de telefone
-- ? Validação de formulários
+- ? EdiÃ§Ã£o de informaÃ§Ãµes
+- ? ExclusÃ£o de contatos
+- ? VisualizaÃ§Ã£o de clientes vinculados
+- ? MÃ¡scaras de telefone
+- ? ValidaÃ§Ã£o de formulÃ¡rios
 
-### Relatórios
-- ? Visualização do histórico de envios
-- ? Filtros por status e visualização
+### RelatÃ³rios
+- ? VisualizaÃ§Ã£o do histÃ³rico de envios
+- ? Filtros por status e visualizaÃ§Ã£o
 - ? Links para PDFs dos envios
-- ? Visualização de dados JSON
+- ? VisualizaÃ§Ã£o de dados JSON
 - ? Indicadores visuais de status
 
 ## ?? Design
 
 Interface minimalista inspirada no design Apple:
-- Amplo espaço em branco
-- Tipografia limpa e legível
+- Amplo espaÃ§o em branco
+- Tipografia limpa e legÃ­vel
 - Componentes discretos e funcionais
 - Foco em produtividade
-- Responsivo e acessível
+- Responsivo e acessÃ­vel
 
 ## ?? Estrutura do Projeto
 
 ```
 +-- app/
-¦   +-- (auth)/
-¦   ¦   +-- login/          # Página de login
-¦   +-- (app)/              # Páginas protegidas
-¦   ¦   +-- dashboard/      # Dashboard
-¦   ¦   +-- clientes/       # Gestão de clientes
-¦   ¦   +-- contatos/       # Gestão de contatos
-¦   ¦   +-- relatorios/     # Relatórios de envios
-¦   +-- layout.tsx
-¦   +-- page.tsx
+Â¦   +-- (auth)/
+Â¦   Â¦   +-- login/          # PÃ¡gina de login
+Â¦   +-- (app)/              # PÃ¡ginas protegidas
+Â¦   Â¦   +-- dashboard/      # Dashboard
+Â¦   Â¦   +-- clientes/       # GestÃ£o de clientes
+Â¦   Â¦   +-- contatos/       # GestÃ£o de contatos
+Â¦   Â¦   +-- relatorios/     # RelatÃ³rios de envios
+Â¦   +-- layout.tsx
+Â¦   +-- page.tsx
 +-- components/
-¦   +-- ui/                 # Componentes shadcn
-¦   +-- layout/             # Layout (Sidebar, Topbar, AppShell)
-¦   +-- clientes/           # Componentes de clientes
-¦   +-- contatos/           # Componentes de contatos
-¦   +-- common/             # Componentes reutilizáveis
+Â¦   +-- ui/                 # Componentes shadcn
+Â¦   +-- layout/             # Layout (Sidebar, Topbar, AppShell)
+Â¦   +-- clientes/           # Componentes de clientes
+Â¦   +-- contatos/           # Componentes de contatos
+Â¦   +-- common/             # Componentes reutilizÃ¡veis
 +-- lib/
-¦   +-- supabase/           # Configuração Supabase
-¦   +-- validators/         # Schemas Zod
-¦   +-- hooks/              # React Query hooks
-¦   +-- utils/              # Funções utilitárias
+Â¦   +-- supabase/           # ConfiguraÃ§Ã£o Supabase
+Â¦   +-- validators/         # Schemas Zod
+Â¦   +-- hooks/              # React Query hooks
+Â¦   +-- utils/              # FunÃ§Ãµes utilitÃ¡rias
 +-- supabase/
-    +-- rls_policies.sql    # Políticas de segurança RLS
+    +-- rls_policies.sql    # PolÃ­ticas de seguranÃ§a RLS
 ```
 
-## ?? Segurança
+## ?? SeguranÃ§a
 
-- Autenticação obrigatória em todas as rotas protegidas
+- AutenticaÃ§Ã£o obrigatÃ³ria em todas as rotas protegidas
 - Row Level Security (RLS) habilitado no Supabase
-- Validação de dados no cliente e servidor
-- Normalização de dados sensíveis
-- Proteção contra injeção de código
+- ValidaÃ§Ã£o de dados no cliente e servidor
+- NormalizaÃ§Ã£o de dados sensÃ­veis
+- ProteÃ§Ã£o contra injeÃ§Ã£o de cÃ³digo
 
-## ?? Validações
+## ?? ValidaÃ§Ãµes
 
-Todos os formulários possuem validação com Zod:
-- Campos obrigatórios são marcados com *
-- E-mails são validados
-- Máscaras aplicadas em tempo real
+Todos os formulÃ¡rios possuem validaÃ§Ã£o com Zod:
+- Campos obrigatÃ³rios sÃ£o marcados com *
+- E-mails sÃ£o validados
+- MÃ¡scaras aplicadas em tempo real
 - Dados normalizados antes de salvar
 
-## ?? Build para Produção
+## ?? Build para ProduÃ§Ã£o
 
 ```bash
 npm run build
 npm start
 ```
 
-## ??? Scripts Disponíveis
+## ??? Scripts DisponÃ­veis
 
 - `npm run dev` - Inicia o servidor de desenvolvimento
-- `npm run build` - Cria build de produção
-- `npm start` - Inicia o servidor de produção
+- `npm run build` - Cria build de produÃ§Ã£o
+- `npm start` - Inicia o servidor de produÃ§Ã£o
 - `npm run lint` - Executa o linter
 
-## ?? Licença
+## ?? LicenÃ§a
 
-Este projeto é proprietário e confidencial.
+Este projeto Ã© proprietÃ¡rio e confidencial.
 
 ## ????? Desenvolvido por
 
-Clowndys Sonas 4.5 (WizzAgent) - Full Stack Senior Engineer
+Davi Oliveira
 
 ---
 
-**Nota**: Lembre-se de configurar corretamente as variáveis de ambiente e as políticas RLS no Supabase antes de usar o sistema em produção.
+**Nota**: Lembre-se de configurar corretamente as variÃ¡veis de ambiente e as polÃ­ticas RLS no Supabase antes de usar o sistema em produÃ§Ã£o.
