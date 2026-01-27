@@ -13,3 +13,5 @@ echo Iniciando o servidor...
 echo.
 npm run dev
 pause
+
+

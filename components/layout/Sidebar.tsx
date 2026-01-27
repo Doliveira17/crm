@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, UserCircle, FileText, MessageSquare, Tag } from 'lucide-react'
+import { LayoutDashboard, Users, UserCircle, FileText, MessageSquare, Tag, Zap } from 'lucide-react'
 
 const navItems = [
   {
@@ -30,6 +30,11 @@ const navItems = [
     title: 'Tags',
     href: '/tags',
     icon: Tag,
+  },
+  {
+    title: 'Faturas',
+    href: '/faturas',
+    icon: Zap,
   },
   {
     title: 'Relatórios',
