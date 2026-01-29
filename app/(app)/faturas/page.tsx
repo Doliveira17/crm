@@ -128,14 +128,32 @@ export default function FaturasDashboardPage() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // 🔄 FUNÇÃO PARA BUSCAR DADOS
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (forceRefresh = false) => {
     try {
-      const response = await fetch('/api/faturas/metrics')
+      // Forçar bypass do cache adicionando timestamp
+      const timestamp = new Date().getTime()
+      const url = forceRefresh 
+        ? `/api/faturas/metrics?force=${timestamp}` 
+        : `/api/faturas/metrics?t=${timestamp}`
+        
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
       if (!response.ok) {
         throw new Error('Erro ao buscar dados')
       }
 
       const apiData: ApiResponse = await response.json()
+      console.log('🔄 Dados atualizados:', {
+        totalClientes: apiData.metricas.totalClientes,
+        primeirosClientes: apiData.clientesAgrupados.slice(0, 3).map(c => c.cliente)
+      })
+      
       setData(apiData)
       setLastUpdate(new Date())
       setError(null)
@@ -210,6 +228,12 @@ export default function FaturasDashboardPage() {
   const handleRefresh = () => {
     setLoading(true)
     fetchData()
+  }
+
+  const handleForceRefresh = () => {
+    console.log('🔄 Forçando refresh completo...')
+    setLoading(true)
+    fetchData(true) // Passando true para forçar refresh
   }
 
   const toggleLive = () => {
@@ -351,14 +375,14 @@ export default function FaturasDashboardPage() {
 
       {/* 📊 MÉTRICAS PRINCIPAIS */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {/* Total de Clientes */}
+        {/* Total de Contratos */}
         <div className="rounded-2xl bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 p-6 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <Building2 className="h-8 w-8 text-blue-500" />
-            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Clientes</span>
+            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Contratos</span>
           </div>
           <p className="text-4xl font-bold text-foreground">{metricas?.totalClientes || 0}</p>
-          <p className="text-sm text-muted-foreground mt-2">Total de clientes</p>
+          <p className="text-sm text-muted-foreground mt-2">Total de contratos</p>
         </div>
 
         {/* Total de UCs */}
@@ -583,9 +607,15 @@ export default function FaturasDashboardPage() {
                         <span className="font-bold text-foreground">{cliente.totalUCs}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground">Total:</span>
+                        <span className="text-muted-foreground">Total Injetado:</span>
                         <span className="font-bold text-emerald-600 dark:text-emerald-400">
                           {formatNumber(cliente.totalInjetado)} kWh
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-foreground">Taxa Problema:</span>
+                        <span className={`font-bold ${cliente.porcentagemProblema > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          {cliente.porcentagemProblema.toFixed(1)}%
                         </span>
                       </div>
                     </div>
@@ -616,7 +646,21 @@ export default function FaturasDashboardPage() {
                           ? 'border-red-500/60 bg-red-500/10'
                           : 'border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10'
                       }`}
-                      title={`UC: ${uc.uc} | Injetado: ${formatNumber(uc.injetado)} kWh`}
+                      title={`UC: ${uc.uc} | Injetado: ${formatNumber(uc.injetado)} kWh | Clique para mais detalhes`}
+                      onClick={() => {
+                        // Mostrar detalhes da UC em um alert por enquanto (pode ser melhorado com modal)
+                        const detalhes = [
+                          `🏠 Cliente: ${cliente.cliente}`,
+                          `⚡ UC: ${uc.uc}`,
+                          `📊 Injetado: ${formatNumber(uc.injetado)} kWh`,
+                          `📅 Mês Ref.: ${uc.mes_referente || 'N/A'}`,
+                          `🎯 Meta: ${uc.meta_mensal ? formatNumber(uc.meta_mensal) + ' kWh' : 'N/A'}`,
+                          `🏭 Plant ID: ${uc.Plant_ID || 'N/A'}`,
+                          `🔌 Inversor: ${uc.INVERSOR || 'N/A'}`,
+                          `📈 Status: ${uc.status === 'injetado_zerado' ? '⚠️ Zero' : '✅ OK'}`
+                        ].join('\n')
+                        alert(detalhes)
+                      }}
                     >
                       {/* Badge de Status */}
                       <div className="flex items-center justify-center mb-0.5">
@@ -646,18 +690,31 @@ export default function FaturasDashboardPage() {
                         {formatNumber(uc.injetado)}
                       </div>
 
-                      {/* Tooltip no hover */}
+                      {/* Tooltip no hover - Versão melhorada */}
                       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-20">
                         <div className="bg-popover border border-border rounded-lg shadow-xl px-3 py-2 text-left whitespace-nowrap">
-                          <div className="text-xs font-bold text-foreground mb-1">UC {uc.uc}</div>
+                          <div className="text-xs font-bold text-foreground mb-1">🏠 {cliente.cliente}</div>
+                          <div className="text-xs font-bold text-foreground mb-1">⚡ UC: {uc.uc}</div>
                           <div className="text-[11px] text-muted-foreground space-y-0.5">
-                            <div>Injetado: <span className="font-bold text-foreground">{formatNumber(uc.injetado)} kWh</span></div>
+                            <div className={`font-bold ${uc.status === 'injetado_zerado' ? 'text-red-500' : 'text-emerald-500'}`}>
+                              📊 Injetado: {formatNumber(uc.injetado)} kWh 
+                              {uc.status === 'injetado_zerado' ? ' ⚠️' : ' ✅'}
+                            </div>
                             {uc.meta_mensal && (
-                              <div>Meta: <span className="font-bold text-foreground">{formatNumber(uc.meta_mensal)} kWh</span></div>
+                              <div>🎯 Meta: <span className="font-bold text-foreground">{formatNumber(uc.meta_mensal)} kWh</span></div>
                             )}
                             {uc.mes_referente && (
-                              <div>Mês: <span className="font-bold text-foreground">{uc.mes_referente}</span></div>
+                              <div>📅 Mês: <span className="font-bold text-foreground">{uc.mes_referente}</span></div>
                             )}
+                            {uc.Plant_ID && (
+                              <div>🏭 Plant: <span className="font-bold text-foreground">{uc.Plant_ID}</span></div>
+                            )}
+                            {uc.INVERSOR && (
+                              <div>🔌 Inversor: <span className="font-bold text-foreground">{uc.INVERSOR}</span></div>
+                            )}
+                            <div className="text-[10px] text-muted-foreground mt-1 pt-1 border-t border-border">
+                              💡 Clique para mais detalhes
+                            </div>
                           </div>
                         </div>
                       </div>

@@ -202,7 +202,38 @@ export interface Database {
       }
     }
     Views: {
-      [_ in never]: never
+      view_faturas_completa: {
+        Row: {
+          UC_Final: string | null
+          id_fatura: number | null
+          cliente_fatura: string | null
+          uc_fatura: string | null
+          mes_referente: string | null
+          injetado: number | null
+          dados_inversor: Json | null
+          caminho_arquivo: string | null
+          status: string | null
+          dados_extraidos: Json | null
+          cliente_cadastro: string | null
+          cpf_cnpj: string | null
+          uc_cadastro: string | null
+          Plant_ID: string | null
+          INVERSOR: string | null
+          saldo_credito: number | null
+          porcentagem: number | null
+          historico_gerado: Json | null
+          data_ativacao: string | null
+          meta_mensal: number | null
+          Geracao_Ac_Anual: number | null
+          Retorno_Financeiro: number | null
+        }
+        Insert: {
+          [_ in never]: never
+        }
+        Update: {
+          [_ in never]: never
+        }
+      }
     }
     Functions: {
       [_ in never]: never
