@@ -21,7 +21,7 @@ export function useClientesList(searchTerm = '') {
 
       if (searchTerm) {
         query = query.or(
-          `nome_cadastro.ilike.%${searchTerm}%,razao_social.ilike.%${searchTerm}%,nome_fantasia.ilike.%${searchTerm}%,documento.ilike.%${searchTerm}%,telefone_principal.ilike.%${searchTerm}%,email_principal.ilike.%${searchTerm}%`
+          `razao_social.ilike.%${searchTerm}%,nome_fantasia.ilike.%${searchTerm}%,documento.ilike.%${searchTerm}%,telefone_principal.ilike.%${searchTerm}%,email_principal.ilike.%${searchTerm}%`
         )
       }
 
@@ -58,12 +58,11 @@ export function useCreateCliente() {
     mutationFn: async (cliente: ClienteInsert) => {
       const normalized: any = {
         ...cliente,
-        nome_cadastro: normalizeText(cliente.nome_cadastro) || '',
+        razao_social: normalizeText(cliente.razao_social) || '',
         documento: normalizeDigits(cliente.documento),
         telefone_principal: normalizeDigits(cliente.telefone_principal),
         email_principal: normalizeEmail(cliente.email_principal),
         cep: normalizeDigits(cliente.cep),
-        razao_social: normalizeText(cliente.razao_social),
         nome_fantasia: normalizeText(cliente.nome_fantasia),
         apelido_relacionamento: normalizeText(cliente.apelido_relacionamento),
         logradouro: normalizeText(cliente.logradouro),
@@ -73,6 +72,15 @@ export function useCreateCliente() {
         municipio: normalizeText(cliente.municipio),
         uf: normalizeText(cliente.uf),
         observacoes: normalizeText(cliente.observacoes),
+        // Novos campos
+        nome_grupo: normalizeText(cliente.nome_grupo),
+        status: cliente.status || 'ATIVO',
+        tipo_relacionamento: normalizeText(cliente.tipo_relacionamento),
+        ins_estadual: normalizeDigits(cliente.ins_estadual),
+        emp_redes: normalizeText(cliente.emp_redes),
+        data_fundacao: cliente.data_fundacao,
+        emp_site: cliente.emp_site,
+        ins_municipal: normalizeDigits(cliente.ins_municipal),
         updated_at: new Date().toISOString(),
       }
 
@@ -101,34 +109,101 @@ export function useUpdateCliente() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ClienteUpdate }) => {
-      const normalized: any = {
-        ...data,
-        nome_cadastro: data.nome_cadastro ? normalizeText(data.nome_cadastro) || '' : undefined,
-        documento: normalizeDigits(data.documento),
-        telefone_principal: normalizeDigits(data.telefone_principal),
-        email_principal: normalizeEmail(data.email_principal),
-        cep: normalizeDigits(data.cep),
-        razao_social: normalizeText(data.razao_social),
-        nome_fantasia: normalizeText(data.nome_fantasia),
-        apelido_relacionamento: normalizeText(data.apelido_relacionamento),
-        logradouro: normalizeText(data.logradouro),
-        numero: normalizeText(data.numero),
-        complemento: normalizeText(data.complemento),
-        bairro: normalizeText(data.bairro),
-        municipio: normalizeText(data.municipio),
-        uf: normalizeText(data.uf),
-        observacoes: normalizeText(data.observacoes),
-        updated_at: new Date().toISOString(),
+      const normalized: any = {}
+      
+      // Só incluir campos que realmente existem
+      if (data.razao_social !== undefined) {
+        normalized.razao_social = normalizeText(data.razao_social) || ''
       }
+      if (data.documento !== undefined) {
+        normalized.documento = normalizeDigits(data.documento)
+      }
+      if (data.telefone_principal !== undefined) {
+        normalized.telefone_principal = normalizeDigits(data.telefone_principal)
+      }
+      if (data.email_principal !== undefined) {
+        normalized.email_principal = normalizeEmail(data.email_principal)
+      }
+      if (data.cep !== undefined) {
+        normalized.cep = normalizeDigits(data.cep)
+      }
+      if (data.nome_fantasia !== undefined) {
+        normalized.nome_fantasia = normalizeText(data.nome_fantasia)
+      }
+      if (data.apelido_relacionamento !== undefined) {
+        normalized.apelido_relacionamento = normalizeText(data.apelido_relacionamento)
+      }
+      if (data.logradouro !== undefined) {
+        normalized.logradouro = normalizeText(data.logradouro)
+      }
+      if (data.numero !== undefined) {
+        normalized.numero = normalizeText(data.numero)
+      }
+      if (data.complemento !== undefined) {
+        normalized.complemento = normalizeText(data.complemento)
+      }
+      if (data.bairro !== undefined) {
+        normalized.bairro = normalizeText(data.bairro)
+      }
+      if (data.municipio !== undefined) {
+        normalized.municipio = normalizeText(data.municipio)
+      }
+      if (data.uf !== undefined) {
+        normalized.uf = normalizeText(data.uf)
+      }
+      if (data.observacoes !== undefined) {
+        normalized.observacoes = normalizeText(data.observacoes)
+      }
+      if (data.tags !== undefined) {
+        normalized.tags = data.tags
+      }
+      if (data.tipo_cliente !== undefined) {
+        normalized.tipo_cliente = data.tipo_cliente
+      }
+      if (data.favorito !== undefined) {
+        normalized.favorito = data.favorito
+      }
+      // Novos campos
+      if (data.nome_grupo !== undefined) {
+        normalized.nome_grupo = normalizeText(data.nome_grupo)
+      }
+      if (data.status !== undefined) {
+        normalized.status = data.status
+      }
+      if (data.tipo_relacionamento !== undefined) {
+        normalized.tipo_relacionamento = normalizeText(data.tipo_relacionamento)
+      }
+      if (data.ins_estadual !== undefined) {
+        normalized.ins_estadual = normalizeDigits(data.ins_estadual)
+      }
+      if (data.emp_redes !== undefined) {
+        normalized.emp_redes = normalizeText(data.emp_redes)
+      }
+      if (data.data_fundacao !== undefined) {
+        normalized.data_fundacao = data.data_fundacao
+      }
+      if (data.emp_site !== undefined) {
+        normalized.emp_site = data.emp_site
+      }
+      if (data.ins_municipal !== undefined) {
+        normalized.ins_municipal = normalizeDigits(data.ins_municipal)
+      }
+      
+      // Sempre atualizar o timestamp
+      normalized.updated_at = new Date().toISOString()
 
-      const { data: updated, error } = await (supabase as any)
+      const { data: updated, error } = await supabase
         .from('crm_clientes')
         .update(normalized)
         .eq('id', id)
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Erro do Supabase:', error)
+        throw new Error(`Erro ao atualizar cliente: ${error.message}`)
+      }
+      
       return updated
     },
     onSuccess: (_, variables) => {
@@ -136,9 +211,10 @@ export function useUpdateCliente() {
       queryClient.invalidateQueries({ queryKey: ['cliente', variables.id] })
       toast.success('Cliente atualizado com sucesso')
     },
-    onError: (error) => {
-      toast.error('Erro ao atualizar cliente')
-      console.error(error)
+    onError: (error: any) => {
+      const message = error?.message || 'Erro desconhecido'
+      toast.error(message)
+      console.error('Erro na mutação:', error)
     },
   })
 }

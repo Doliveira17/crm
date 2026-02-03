@@ -93,7 +93,7 @@ export default function ContatoDetailPage() {
                       className="flex-1 cursor-pointer"
                     >
                       <p className="font-medium hover:text-primary hover:underline">
-                        {vinculo.cliente?.nome_cadastro}
+                        {vinculo.cliente?.razao_social}
                       </p>
                       {vinculo.cliente?.tipo_cliente && (
                         <p className="text-sm text-muted-foreground">

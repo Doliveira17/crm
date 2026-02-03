@@ -253,7 +253,7 @@ export default function TagsPage() {
                       >
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="font-medium">{cliente.nome_cadastro}</p>
+                            <p className="font-medium">{cliente.razao_social}</p>
                             {cliente.documento && (
                               <p className="text-sm text-muted-foreground">{cliente.documento}</p>
                             )}

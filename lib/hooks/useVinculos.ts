@@ -46,7 +46,7 @@ export function useVinculosByContato(contatoId: string) {
         .from('crm_clientes_contatos')
         .select(`
           *,
-          cliente:crm_clientes(id, nome_cadastro, tipo_cliente)
+          cliente:crm_clientes(id, razao_social, tipo_cliente)
         `)
         .eq('contato_id', contatoId)
 
@@ -62,58 +62,70 @@ export function useCreateVinculo() {
 
   return useMutation({
     mutationFn: async (vinculo: VinculoInsert) => {
-      // Criar o vínculo
-      const { data: vinculoData, error: vinculoError } = await (supabase as any)
-        .from('crm_clientes_contatos')
-        .insert(vinculo)
-        .select()
-        .single()
+      try {
+        // Criar o vínculo
+        const { data: vinculoData, error: vinculoError } = await supabase
+          .from('crm_clientes_contatos')
+          .insert(vinculo)
+          .select()
+          .single()
 
-      if (vinculoError) throw vinculoError
+        if (vinculoError) throw vinculoError
 
-      // Verificar se já existe registro em relatorio_envios para este cliente/contato
-      const { data: existingRelatorio } = await (supabase as any)
-        .from('relatorio_envios')
-        .select('id')
-        .eq('cliente_id', vinculo.cliente_id)
-        .eq('contato_id', vinculo.contato_id)
-        .maybeSingle()
+        // Verificar se já existe registro em relatorio_envios para este cliente/contato
+        const { data: existingRelatorio } = await supabase
+          .from('relatorio_envios')
+          .select('id')
+          .eq('cliente_id', vinculo.cliente_id)
+          .eq('contato_id', vinculo.contato_id)
+          .maybeSingle()
 
       // Só criar se não existir
       if (!existingRelatorio) {
-        // Buscar informações do contato para criar registro em relatorio_envios
-        const { data: contatoData, error: contatoError } = await supabase
-          .from('crm_contatos')
-          .select('nome_completo')
-          .eq('id', vinculo.contato_id)
-          .single()
+        try {
+          // Buscar informações do contato para criar registro em relatorio_envios
+          const { data: contatoData, error: contatoError } = await supabase
+            .from('crm_contatos')
+            .select('nome_completo')
+            .eq('id', vinculo.contato_id)
+            .single()
 
-        if (contatoError) {
-          console.error('Erro ao buscar contato:', contatoError)
-        } else {
-          // Definir nome_falado_dono baseado se é contato principal ou não
-          const nomeFaladoDono = vinculo.contato_principal 
-            ? contatoData.nome_completo 
-            : `${contatoData.nome_completo} (Contato-Vinculado)`
+          if (contatoError) {
+            console.warn('Aviso ao buscar contato para relatório:', contatoError.message)
+          } else if (contatoData) {
+            // Definir nome_falado_dono baseado se é contato principal ou não
+            const nomeFaladoDono = vinculo.contato_principal 
+              ? contatoData.nome_completo 
+              : `${contatoData.nome_completo} (Contato-Vinculado)`
 
-          // Criar registro na tabela relatorio_envios
-          const { error: relatorioError } = await (supabase as any)
-            .from('relatorio_envios')
-            .insert({
-              cliente_id: vinculo.cliente_id,
-              contato_id: vinculo.contato_id,
-              nome_falado_dono: nomeFaladoDono,
-              status_envio: 'pendente',
-              viewed: false,
-            })
+            // Criar registro na tabela relatorio_envios
+            const { error: relatorioError } = await supabase
+              .from('relatorio_envios')
+              .insert({
+                cliente_id: vinculo.cliente_id,
+                contato_id: vinculo.contato_id,
+                nome_falado_dono: nomeFaladoDono,
+                status_envio: 'pendente',
+                viewed: false,
+              })
 
-          if (relatorioError) {
-            console.error('Erro ao criar relatório de envio:', relatorioError)
+            if (relatorioError) {
+              console.warn('Aviso ao criar relatório de envio:', relatorioError.message)
+              // Não falhar a operação principal por causa do relatório
+            }
           }
+        } catch (error) {
+          console.warn('Aviso na criação do relatório:', error)
+          // Não falhar a operação principal por causa do relatório
         }
       }
 
       return vinculoData
+    } catch (error) {
+      // Se houver qualquer erro na criação do relatório, ainda assim retornar o vínculo
+      console.warn('Erro geral na criação do vínculo:', error)
+      throw error // Re-throw para que a mutação falhe se for erro crítico
+    }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['vinculos', variables.cliente_id] })

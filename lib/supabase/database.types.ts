@@ -12,10 +12,9 @@ export interface Database {
       crm_clientes: {
         Row: {
           id: string
-          nome_cadastro: string
+          razao_social: string
           tipo_cliente: string | null
           documento: string | null
-          razao_social: string | null
           nome_fantasia: string | null
           apelido_relacionamento: string | null
           telefone_principal: string | null
@@ -32,13 +31,21 @@ export interface Database {
           favorito: boolean | null
           created_at: string
           updated_at: string
+          // Novos campos
+          nome_grupo: string | null
+          status: string | null
+          tipo_relacionamento: string | null
+          ins_estadual: string | null
+          emp_redes: string | null
+          data_fundacao: string | null
+          emp_site: string | null
+          ins_municipal: string | null
         }
         Insert: {
           id?: string
-          nome_cadastro: string
+          razao_social: string
           tipo_cliente?: string | null
           documento?: string | null
-          razao_social?: string | null
           nome_fantasia?: string | null
           apelido_relacionamento?: string | null
           telefone_principal?: string | null
@@ -55,13 +62,21 @@ export interface Database {
           favorito?: boolean | null
           created_at?: string
           updated_at?: string
+          // Novos campos
+          nome_grupo?: string | null
+          status?: string | null
+          tipo_relacionamento?: string | null
+          ins_estadual?: string | null
+          emp_redes?: string | null
+          data_fundacao?: string | null
+          emp_site?: string | null
+          ins_municipal?: string | null
         }
         Update: {
           id?: string
-          nome_cadastro?: string
+          razao_social?: string
           tipo_cliente?: string | null
           documento?: string | null
-          razao_social?: string | null
           nome_fantasia?: string | null
           apelido_relacionamento?: string | null
           telefone_principal?: string | null
@@ -78,6 +93,15 @@ export interface Database {
           favorito?: boolean | null
           created_at?: string
           updated_at?: string
+          // Novos campos
+          nome_grupo?: string | null
+          status?: string | null
+          tipo_relacionamento?: string | null
+          ins_estadual?: string | null
+          emp_redes?: string | null
+          data_fundacao?: string | null
+          emp_site?: string | null
+          ins_municipal?: string | null
         }
       }
       crm_contatos: {

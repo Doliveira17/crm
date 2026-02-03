@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useClientesList } from '@/lib/hooks/useClientes'
@@ -18,14 +18,31 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Users, Star } from 'lucide-react'
+import { Plus, Users, Star, Save } from 'lucide-react'
 import { formatPhoneBR, formatDocument } from '@/lib/utils/normalize'
 import { formatDate } from '@/lib/utils/format'
+import { toast } from 'sonner'
 
 export default function ClientesPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const { data: clientes, isLoading } = useClientesList(searchTerm)
+  
+  // Estado do auto-save global
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('global-auto-save') === 'true'
+    }
+    return false
+  })
+
+  // Persistir configuração do auto-save global
+  const toggleAutoSave = () => {
+    const newValue = !autoSaveEnabled
+    setAutoSaveEnabled(newValue)
+    localStorage.setItem('global-auto-save', String(newValue))
+    toast.success(`Auto-save ${newValue ? 'ativado' : 'desativado'} para todos os formulários`)
+  }
 
   return (
     <div className="space-y-6">
@@ -34,12 +51,23 @@ export default function ClientesPage() {
           <h1 className="text-3xl font-bold">Clientes</h1>
           <p className="text-muted-foreground">Gerenciar cadastro de clientes</p>
         </div>
-        <Link href="/clientes/novo">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Cliente
+        <div className="flex items-center gap-3">
+          <Button
+            variant={autoSaveEnabled ? "default" : "outline"}
+            size="sm"
+            onClick={toggleAutoSave}
+            title={`Auto-save global ${autoSaveEnabled ? 'ativado' : 'desativado'}`}
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Auto-save {autoSaveEnabled ? 'ON' : 'OFF'}
           </Button>
-        </Link>
+          <Link href="/clientes/novo">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Cliente
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card className="p-6">
@@ -91,7 +119,7 @@ export default function ClientesPage() {
                       )}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {cliente.nome_cadastro}
+                      {cliente.razao_social}
                     </TableCell>
                     <TableCell>
                       {cliente.tipo_cliente && (

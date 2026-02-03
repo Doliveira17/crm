@@ -184,9 +184,9 @@ export function useClientesByTag(tagName: string | null) {
 
       const { data, error } = await supabase
         .from('crm_clientes')
-        .select('id, nome_cadastro, tipo_cliente, documento, tags')
+        .select('id, razao_social, tipo_cliente, documento, tags')
         .contains('tags', [tagName])
-        .order('nome_cadastro')
+        .order('razao_social')
 
       if (error) throw error
       return data || []

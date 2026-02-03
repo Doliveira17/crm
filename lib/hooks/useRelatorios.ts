@@ -30,7 +30,7 @@ export function useRelatoriosList(filters?: {
         .from('relatorio_envios')
         .select(`
           *,
-          cliente:crm_clientes(nome_cadastro),
+          cliente:crm_clientes(razao_social),
           contato:crm_contatos(nome_completo, celular, cargo)
         `)
         .order('created_at', { ascending: false })

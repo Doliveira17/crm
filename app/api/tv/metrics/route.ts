@@ -108,10 +108,10 @@ export async function GET(request: NextRequest) {
         if (rel.cliente_id) {
           const { data: cliente } = await supabase
             .from('crm_clientes')
-            .select('nome_cadastro')
-            .eq('id', rel.cliente_id)
+            .select('razao_social')
+            .eq('id', item.cliente_id)
             .single()
-          clienteNome = (cliente as any)?.nome_cadastro || null
+          clienteNome = (cliente as any)?.razao_social || null
         }
 
         if (rel.contato_id) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useClienteById, useUpdateCliente, useDeleteCliente } from '@/lib/hooks/useClientes'
@@ -11,7 +11,8 @@ import { LoadingState } from '@/components/common/LoadingState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Trash2, Star, Copy } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { ArrowLeft, Trash2, Star, Copy, Users, Sparkles } from 'lucide-react'
 import { ClienteFormData } from '@/lib/validators/cliente'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -29,6 +30,20 @@ export default function ClienteDetailPage() {
   const setContatoPrincipal = useSetContatoPrincipal()
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [contactsModalOpen, setContactsModalOpen] = useState(false)
+
+  // Atalho Ctrl+V para vincular contato
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault()
+        setContactsModalOpen(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   if (isLoading) {
     return <LoadingState />
@@ -59,7 +74,7 @@ export default function ClienteDetailPage() {
     
     const novoCliente = {
       ...dadosCliente,
-      nome_cadastro: `${dadosCliente.nome_cadastro} (Cópia)`,
+      razao_social: `${dadosCliente.razao_social} (Cópia)`,
     }
 
     const { data, error } = await supabase
@@ -98,7 +113,7 @@ export default function ClienteDetailPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold">{cliente.nome_cadastro}</h1>
+              <h1 className="text-3xl font-bold">{cliente.razao_social}</h1>
               <Button
                 variant="ghost"
                 size="icon"
@@ -106,6 +121,41 @@ export default function ClienteDetailPage() {
               >
                 <Star className={`h-5 w-5 ${cliente.favorito ? 'fill-yellow-500 text-yellow-500' : ''}`} />
               </Button>
+              
+              {/* Botão de contatos próximo ao título */}
+              <Dialog open={contactsModalOpen} onOpenChange={setContactsModalOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-all duration-200 ml-4"
+                    title="Abrir contatos vinculados (Ctrl+V)"
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    Contatos ({vinculos?.length || 0})
+                  </Button>
+                </DialogTrigger>
+                
+                <DialogContent className="max-w-7xl w-[96vw] h-[92vh] overflow-hidden border border-gray-200 bg-white rounded-xl shadow-xl">
+                  <DialogHeader className="bg-gray-50 border-b border-gray-100 pb-6 px-8 pt-8 -mx-6 -mt-6 rounded-t-xl">
+                    <DialogTitle className="flex items-center gap-4 text-2xl font-semibold">
+                      <div className="flex items-center justify-center w-12 h-12 bg-gray-200 rounded-xl">
+                        <Users className="h-6 w-6 text-gray-700" />
+                      </div>
+                      <span className="text-gray-800">Contatos Vinculados</span>
+                    </DialogTitle>
+                  </DialogHeader>
+                  
+                  <div className="px-8 py-8 overflow-y-auto overflow-x-hidden h-[calc(92vh-140px)]">
+                    <ClienteContactsPanel
+                      clienteId={clienteId}
+                      vinculos={vinculos || []}
+                      onDeleteVinculo={handleDeleteVinculo}
+                      onSetPrincipal={handleSetPrincipal}
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
             <p className="text-muted-foreground">Editar informações do cliente</p>
           </div>
@@ -119,6 +169,7 @@ export default function ClienteDetailPage() {
             <Copy className="mr-2 h-4 w-4" />
             Duplicar
           </Button>
+          
           <Button
             variant="destructive"
             size="sm"
@@ -135,15 +186,6 @@ export default function ClienteDetailPage() {
         onSubmit={handleUpdate}
         onCancel={() => router.push('/clientes')}
         loading={updateCliente.isPending}
-      />
-
-      <Separator className="my-8" />
-
-      <ClienteContactsPanel
-        clienteId={clienteId}
-        vinculos={vinculos || []}
-        onDeleteVinculo={handleDeleteVinculo}
-        onSetPrincipal={handleSetPrincipal}
       />
 
       <ConfirmDialog

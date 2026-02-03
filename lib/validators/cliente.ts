@@ -1,10 +1,9 @@
 import { z } from 'zod'
 
 export const clienteSchema = z.object({
-  nome_cadastro: z.string().min(1, 'Nome é obrigatório'),
+  razao_social: z.string().min(1, 'Razão Social é obrigatório'),
   tipo_cliente: z.enum(['PF', 'PJ']).nullable().optional(),
   documento: z.string().nullable().optional(),
-  razao_social: z.string().nullable().optional(),
   nome_fantasia: z.string().nullable().optional(),
   apelido_relacionamento: z.string().nullable().optional(),
   telefone_principal: z.string().nullable().optional(),
@@ -19,6 +18,15 @@ export const clienteSchema = z.object({
   observacoes: z.string().nullable().optional(),
   tags: z.array(z.string()).nullable().optional(),
   favorito: z.boolean().nullable().optional(),
+  // Novos campos
+  nome_grupo: z.string().nullable().optional(),
+  status: z.enum(['ATIVO', 'INATIVO', 'PROSPECTO', 'SUSPENSO']).nullable().optional(),
+  tipo_relacionamento: z.string().nullable().optional(),
+  ins_estadual: z.string().nullable().optional(),
+  emp_redes: z.string().nullable().optional(),
+  data_fundacao: z.string().nullable().optional(), // String para compatibilidade com input date
+  emp_site: z.string().url('URL inválida').nullable().optional().or(z.literal('')),
+  ins_municipal: z.string().nullable().optional(),
 }).refine((data) => {
   // Se não tem documento preenchido, passa
   if (!data.documento || data.documento.trim() === '') {

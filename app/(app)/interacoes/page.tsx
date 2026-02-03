@@ -37,7 +37,7 @@ interface Interacao {
   Interagiu_em: string | null
   created_at: string
   cliente?: {
-    nome_cadastro: string
+    razao_social: string
     tipo_cliente: string | null
   } | null
   contato?: {
@@ -88,7 +88,7 @@ export default function InteracoesPage() {
           if (item.cliente_id) {
             const { data: clienteData } = await supabase
               .from('crm_clientes')
-              .select('nome_cadastro, tipo_cliente')
+              .select('razao_social, tipo_cliente')
               .eq('id', item.cliente_id)
               .single()
             cliente = clienteData
@@ -129,7 +129,7 @@ export default function InteracoesPage() {
     // Filtro de busca
     const matchSearch = searchTerm === '' || 
       interacao.nome_falado_dono?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      interacao.cliente?.nome_cadastro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      interacao.cliente?.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       interacao.contato?.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase())
 
     // Filtro de status
@@ -327,7 +327,7 @@ export default function InteracoesPage() {
                               router.push(`/clientes/${interacao.cliente_id}`)
                             }}
                           >
-                            {interacao.cliente.nome_cadastro}
+                            {interacao.cliente.razao_social}
                           </span>
                           {interacao.cliente.tipo_cliente && (
                             <Badge variant="outline" className="text-xs">

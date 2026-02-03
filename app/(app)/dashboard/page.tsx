@@ -83,7 +83,7 @@ function useDashboardData() {
         supabase.from('relatorio_envios').select('id', { count: 'exact', head: true }),
         supabase.from('relatorio_envios').select('id', { count: 'exact', head: true }).eq('viewed', true),
         supabase.from('relatorio_envios').select('id', { count: 'exact', head: true }).eq('viewed', false),
-        supabase.from('crm_clientes').select('id, nome_cadastro, tipo_cliente, created_at, favorito, tags').order('created_at', { ascending: false }).limit(5),
+        supabase.from('crm_clientes').select('id, razao_social, tipo_cliente, created_at, favorito, tags').order('created_at', { ascending: false }).limit(5),
         supabase.from('crm_contatos').select('id, nome_completo, email, celular, cargo, created_at').order('created_at', { ascending: false }).limit(5),
         supabase.from('crm_clientes').select('id', { count: 'exact', head: true }).gte('created_at', seteDiasAtras.toISOString()),
         supabase.from('crm_contatos').select('id', { count: 'exact', head: true }).gte('created_at', seteDiasAtras.toISOString()),
@@ -422,7 +422,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-medium truncate">{cliente.nome_cadastro}</p>
+                        <p className="text-sm font-medium truncate">{cliente.razao_social}</p>
                         {cliente.favorito && (
                           <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 shrink-0" />
                         )}

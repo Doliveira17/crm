@@ -35,6 +35,17 @@ export function useKeyboardShortcuts() {
           router.back()
         }
       }
+
+      // Ctrl+S - Salvar (se estiver em um formulário)
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        const isFormPage = window.location.pathname.includes('/novo') || 
+                          window.location.pathname.includes('/editar')
+        if (isFormPage) {
+          // O evento será tratado pelos componentes de formulário individuais
+          // Apenas prevenimos o comportamento padrão do navegador
+          e.preventDefault()
+        }
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
