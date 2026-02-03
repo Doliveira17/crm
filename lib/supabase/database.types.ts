@@ -112,6 +112,11 @@ export interface Database {
           cargo: string | null
           celular: string | null
           email: string | null
+          data_aniversario: string | null
+          pessoa_site: string | null
+          pessoa_redes: string | null
+          autorizacao_mensagem: boolean | null
+          canal_relatorio: string[] | null
           observacoes: string | null
           created_at: string
           updated_at: string
@@ -123,6 +128,11 @@ export interface Database {
           cargo?: string | null
           celular?: string | null
           email?: string | null
+          data_aniversario?: string | null
+          pessoa_site?: string | null
+          pessoa_redes?: string | null
+          autorizacao_mensagem?: boolean | null
+          canal_relatorio?: string[] | null
           observacoes?: string | null
           created_at?: string
           updated_at?: string
@@ -134,6 +144,11 @@ export interface Database {
           cargo?: string | null
           celular?: string | null
           email?: string | null
+          data_aniversario?: string | null
+          pessoa_site?: string | null
+          pessoa_redes?: string | null
+          autorizacao_mensagem?: boolean | null
+          canal_relatorio?: string[] | null
           observacoes?: string | null
           created_at?: string
           updated_at?: string

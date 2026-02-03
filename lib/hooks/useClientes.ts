@@ -61,6 +61,7 @@ export function useCreateCliente() {
         razao_social: normalizeText(cliente.razao_social) || '',
         documento: normalizeDigits(cliente.documento),
         telefone_principal: normalizeDigits(cliente.telefone_principal),
+        whatsapp: normalizeDigits(cliente.whatsapp),
         email_principal: normalizeEmail(cliente.email_principal),
         cep: normalizeDigits(cliente.cep),
         nome_fantasia: normalizeText(cliente.nome_fantasia),
@@ -71,7 +72,9 @@ export function useCreateCliente() {
         bairro: normalizeText(cliente.bairro),
         municipio: normalizeText(cliente.municipio),
         uf: normalizeText(cliente.uf),
+        pais: normalizeText(cliente.pais),
         observacoes: normalizeText(cliente.observacoes),
+        observacoes_extras: normalizeText(cliente.observacoes_extras),
         // Novos campos
         nome_grupo: normalizeText(cliente.nome_grupo),
         status: cliente.status || 'ATIVO',
@@ -121,6 +124,9 @@ export function useUpdateCliente() {
       if (data.telefone_principal !== undefined) {
         normalized.telefone_principal = normalizeDigits(data.telefone_principal)
       }
+      if (data.whatsapp !== undefined) {
+        normalized.whatsapp = normalizeDigits(data.whatsapp)
+      }
       if (data.email_principal !== undefined) {
         normalized.email_principal = normalizeEmail(data.email_principal)
       }
@@ -151,8 +157,14 @@ export function useUpdateCliente() {
       if (data.uf !== undefined) {
         normalized.uf = normalizeText(data.uf)
       }
+      if (data.pais !== undefined) {
+        normalized.pais = normalizeText(data.pais)
+      }
       if (data.observacoes !== undefined) {
         normalized.observacoes = normalizeText(data.observacoes)
+      }
+      if (data.observacoes_extras !== undefined) {
+        normalized.observacoes_extras = normalizeText(data.observacoes_extras)
       }
       if (data.tags !== undefined) {
         normalized.tags = data.tags

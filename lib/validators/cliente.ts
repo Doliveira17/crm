@@ -7,6 +7,7 @@ export const clienteSchema = z.object({
   nome_fantasia: z.string().nullable().optional(),
   apelido_relacionamento: z.string().nullable().optional(),
   telefone_principal: z.string().nullable().optional(),
+  whatsapp: z.string().nullable().optional(),
   email_principal: z.string().email('E-mail inválido').nullable().optional().or(z.literal('')),
   logradouro: z.string().nullable().optional(),
   numero: z.string().nullable().optional(),
@@ -15,7 +16,9 @@ export const clienteSchema = z.object({
   municipio: z.string().nullable().optional(),
   uf: z.string().max(2).nullable().optional(),
   cep: z.string().nullable().optional(),
+  pais: z.string().nullable().optional(),
   observacoes: z.string().nullable().optional(),
+  observacoes_extras: z.string().nullable().optional(),
   tags: z.array(z.string()).nullable().optional(),
   favorito: z.boolean().nullable().optional(),
   // Novos campos

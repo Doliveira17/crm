@@ -10,16 +10,15 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Plus, Star, Trash2, UserPlus, ExternalLink } from 'lucide-react'
+import { Plus, Star, Trash2, UserPlus, ExternalLink, Users, CheckCircle } from 'lucide-react'
 import { formatPhoneBR } from '@/lib/utils/normalize'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { contatoSchema, ContatoFormData } from '@/lib/validators/contato'
+import { ContatoForm } from '@/components/contatos/ContatoForm'
+import { ContatoFormData } from '@/lib/validators/contato'
 import { Input } from '@/components/ui/input'
-import { phoneMask } from '@/lib/utils/masks'
 import { SearchInput } from '@/components/common/SearchInput'
+import { toast } from 'sonner'
 
 interface ClienteContactsPanelProps {
   clienteId: string
@@ -47,18 +46,6 @@ export function ClienteContactsPanel({
   const createVinculo = useCreateVinculo()
   const createContato = useCreateContato()
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-  } = useForm<ContatoFormData>({
-    resolver: zodResolver(contatoSchema),
-  })
-
-  const [celularValue, setCelularValue] = useState('')
-
   const handleLinkExisting = async () => {
     if (!selectedContatoId) return
 
@@ -70,20 +57,6 @@ export function ClienteContactsPanel({
 
     setLinkDialogOpen(false)
     setSelectedContatoId('')
-  }
-
-  const handleCreateAndLink = async (data: ContatoFormData) => {
-    const newContato = await createContato.mutateAsync(data) as any
-
-    await createVinculo.mutateAsync({
-      cliente_id: clienteId,
-      contato_id: newContato.id,
-      contato_principal: false,
-    })
-
-    setNewContactDialogOpen(false)
-    reset()
-    setCelularValue('')
   }
 
   const availableContatos = contatos?.filter(
@@ -151,8 +124,10 @@ export function ClienteContactsPanel({
       setQuickCreateName('')
       setLinkDialogOpen(false)
       setSearchTerm('')
+      toast.success('Contato criado e vinculado com sucesso')
     } catch (error) {
       console.error('Erro ao criar e vincular contato:', error)
+      toast.error('Erro ao criar contato. Verifique os dados e tente novamente.')
     }
   }
 
@@ -227,6 +202,17 @@ export function ClienteContactsPanel({
                     )}
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
+                    {vinculo.contato.canal_relatorio && vinculo.contato.canal_relatorio.length > 0 && (
+                      <Button
+                        variant="outline"
+                        disabled
+                        title={`Autorizado para: ${vinculo.contato.canal_relatorio.join(', ')}`}
+                        className="border-green-300 text-green-600 bg-green-50 cursor-default"
+                        size="sm"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       onClick={() => router.push(`/contatos/${vinculo.contato.id}`)}
@@ -387,70 +373,59 @@ export function ClienteContactsPanel({
       </Dialog>
 
       <Dialog open={newContactDialogOpen} onOpenChange={setNewContactDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Criar e Vincular Novo Contato</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(handleCreateAndLink)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nome_completo">
-                Nome Completo <span className="text-destructive">*</span>
-              </Label>
-              <Input id="nome_completo" {...register('nome_completo')} />
-              {errors.nome_completo && (
-                <p className="text-sm text-destructive">{errors.nome_completo.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cargo">Cargo/Relacionamento</Label>
-              <Input
-                id="cargo"
-                placeholder="Ex: Esposa, Sócio, Gerente..."
-                {...register('cargo')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="celular">Celular</Label>
-              <Input
-                id="celular"
-                value={celularValue}
-                onChange={(e) => {
-                  const masked = phoneMask(e.target.value)
-                  setCelularValue(masked)
-                  setValue('celular', masked)
-                }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" {...register('email')} />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setNewContactDialogOpen(false)
-                  reset()
-                  setCelularValue('')
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createContato.isPending || createVinculo.isPending}>
-                {createContato.isPending || createVinculo.isPending
-                  ? 'Criando...'
-                  : 'Criar e Vincular'}
-              </Button>
-            </div>
-          </form>
+          <ContatoForm
+            onSubmit={async (data: ContatoFormData) => {
+              try {
+                console.log('=== INICIANDO CRIAÇÃO DE CONTATO ===')
+                console.log('Dados do formulário:', JSON.stringify(data, null, 2))
+                
+                const novoContato = await createContato.mutateAsync(data)
+                console.log('✅ Contato criado com sucesso:', novoContato)
+                
+                const vinculoData = {
+                  cliente_id: clienteId,
+                  contato_id: novoContato.id,
+                  cargo_no_cliente: data.cargo || null,
+                  contato_principal: false
+                }
+                console.log('Criando vínculo com dados:', vinculoData)
+                
+                await createVinculo.mutateAsync(vinculoData)
+                console.log('✅ Vínculo criado com sucesso')
+                
+                setNewContactDialogOpen(false)
+                toast.success('Contato criado e vinculado com sucesso')
+              } catch (error: any) {
+                console.error('❌ ERRO COMPLETO:', error)
+                console.error('❌ Tipo do erro:', typeof error)
+                console.error('❌ Keys do erro:', Object.keys(error || {}))
+                console.error('❌ String do erro:', String(error))
+                console.error('❌ JSON do erro:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
+                
+                if (error?.message) {
+                  console.error('❌ Mensagem:', error.message)
+                }
+                if (error?.code) {
+                  console.error('❌ Código:', error.code)
+                }
+                if (error?.details) {
+                  console.error('❌ Detalhes:', error.details)
+                }
+                if (error?.hint) {
+                  console.error('❌ Dica:', error.hint)
+                }
+                
+                const errorMessage = error?.message || error?.toString() || 'Erro desconhecido ao criar contato'
+                toast.error(`Erro: ${errorMessage}`)
+              }
+            }}
+            onCancel={() => setNewContactDialogOpen(false)}
+            loading={createContato.isPending || createVinculo.isPending}
+          />
         </DialogContent>
       </Dialog>
 

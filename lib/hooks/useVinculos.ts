@@ -15,6 +15,7 @@ export interface VinculoWithDetails extends Vinculo {
     cargo: string | null
     celular: string | null
     email: string | null
+    canal_relatorio: string[] | null
   }
 }
 
@@ -26,7 +27,7 @@ export function useVinculosByCliente(clienteId: string) {
         .from('crm_clientes_contatos')
         .select(`
           *,
-          contato:crm_contatos(id, nome_completo, cargo, celular, email)
+          contato:crm_contatos(id, nome_completo, cargo, celular, email, canal_relatorio)
         `)
         .eq('cliente_id', clienteId)
         .order('contato_principal', { ascending: false })

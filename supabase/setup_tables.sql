@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.crm_clientes (
   nome_fantasia text,
   apelido_relacionamento text,
   telefone_principal text,
+  whatsapp text,
   email_principal text,
   logradouro text,
   numero text,
@@ -21,7 +22,19 @@ CREATE TABLE IF NOT EXISTS public.crm_clientes (
   municipio text,
   uf text,
   cep text,
+  pais text,
   observacoes text,
+  observacoes_extras text,
+  nome_grupo text,
+  status text CHECK (status IN ('ATIVO', 'INATIVO', 'PROSPECTO', 'SUSPENSO')),
+  tipo_relacionamento text,
+  ins_estadual text,
+  ins_municipal text,
+  data_fundacao text,
+  emp_site text,
+  emp_redes text,
+  tags text[],
+  favorito boolean DEFAULT false,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -34,6 +47,11 @@ CREATE TABLE IF NOT EXISTS public.crm_contatos (
   cargo text,
   celular text,
   email text,
+  data_aniversario date,
+  pessoa_site text,
+  pessoa_redes jsonb,
+  autorizacao_mensagem boolean DEFAULT false,
+  canal_relatorio text[] CHECK (canal_relatorio IS NULL OR (canal_relatorio <@ ARRAY['email', 'whatsapp']::text[] AND array_length(canal_relatorio, 1) > 0)),
   observacoes text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
@@ -112,6 +130,10 @@ CREATE POLICY "auth_select_relatorios" ON public.relatorio_envios FOR SELECT TO 
 -- =============================================
 CREATE INDEX IF NOT EXISTS idx_clientes_updated ON public.crm_clientes(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_contatos_updated ON public.crm_contatos(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_contatos_data_aniversario ON public.crm_contatos(data_aniversario);
+CREATE INDEX IF NOT EXISTS idx_contatos_pessoa_redes ON public.crm_contatos USING gin(pessoa_redes);
+CREATE INDEX IF NOT EXISTS idx_contatos_autorizacao ON public.crm_contatos(autorizacao_mensagem);
+CREATE INDEX IF NOT EXISTS idx_contatos_canal_relatorio ON public.crm_contatos USING gin(canal_relatorio);
 CREATE INDEX IF NOT EXISTS idx_vinculos_cliente ON public.crm_clientes_contatos(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_vinculos_contato ON public.crm_clientes_contatos(contato_id);
 CREATE INDEX IF NOT EXISTS idx_relatorios_created ON public.relatorio_envios(created_at DESC);

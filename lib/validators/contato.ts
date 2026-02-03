@@ -7,6 +7,10 @@ export const contatoSchema = z.object({
   celular: z.string().nullable().optional(),
   email: z.string().email('E-mail inválido').nullable().optional().or(z.literal('')),
   observacoes: z.string().nullable().optional(),
+  data_aniversario: z.string().nullable().optional(),
+  pessoa_site: z.string().url('URL inválida').nullable().optional().or(z.literal('')),
+  pessoa_redes: z.string().nullable().optional(),
+  canal_relatorio: z.array(z.enum(['email', 'whatsapp'])).nullable().optional(),
 })
 
 export type ContatoFormData = z.infer<typeof contatoSchema>

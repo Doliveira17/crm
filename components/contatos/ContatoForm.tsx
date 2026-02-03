@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { phoneMask } from '@/lib/utils/masks'
 import { Save } from 'lucide-react'
 import { toast } from 'sonner'
@@ -29,10 +30,17 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
     watch,
   } = useForm<ContatoFormData>({
     resolver: zodResolver(contatoSchema),
-    defaultValues: initialData,
+    defaultValues: {
+      ...initialData,
+      canal_relatorio: initialData?.canal_relatorio ?? null,
+    },
   })
 
   const [celularValue, setCelularValue] = useState(initialData?.celular || '')
+  const [redesSociais, setRedesSociais] = useState(initialData?.pessoa_redes || '')
+
+  // Watch canal_relatorio
+  const canalRelatorio = watch('canal_relatorio')
 
   // Estados para auto-save global
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
@@ -48,7 +56,8 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
   const watchedValues = watch()
   const currentFormData = JSON.stringify({
     ...watchedValues,
-    celular: celularValue
+    celular: celularValue,
+    pessoa_redes: redesSociais
   })
 
   // Hook para Ctrl+S salvar
@@ -238,7 +247,92 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
                 <p className="text-sm text-destructive">{errors.email.message}</p>
               )}
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="data_aniversario">Data de Aniversário</Label>
+              <Input 
+                id="data_aniversario" 
+                type="date" 
+                {...register('data_aniversario')} 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pessoa_site">Website Pessoal</Label>
+              <Input 
+                id="pessoa_site" 
+                type="url"
+                placeholder="https://..."
+                {...register('pessoa_site')} 
+              />
+              {errors.pessoa_site && (
+                <p className="text-sm text-destructive">{errors.pessoa_site.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="pessoa_redes">Redes Sociais</Label>
+              <Input 
+                id="pessoa_redes" 
+                placeholder="Ex: @instagram, linkedin.com/in/usuario"
+                value={redesSociais}
+                onChange={(e) => {
+                  setRedesSociais(e.target.value)
+                  setValue('pessoa_redes', e.target.value)
+                }}
+              />
+            </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Preferências de Comunicação</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="canal_email"
+                checked={canalRelatorio?.includes('email')}
+                onCheckedChange={(checked) => {
+                  const current = canalRelatorio || []
+                  if (checked) {
+                    setValue('canal_relatorio', [...current.filter(c => c !== 'email'), 'email'])
+                  } else {
+                    const newValue = current.filter(c => c !== 'email')
+                    setValue('canal_relatorio', newValue.length > 0 ? newValue : null)
+                  }
+                }}
+              />
+              <Label htmlFor="canal_email" className="text-sm font-normal cursor-pointer">
+                Receber por E-mail
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="canal_whatsapp"
+                checked={canalRelatorio?.includes('whatsapp')}
+                onCheckedChange={(checked) => {
+                  const current = canalRelatorio || []
+                  if (checked) {
+                    setValue('canal_relatorio', [...current.filter(c => c !== 'whatsapp'), 'whatsapp'])
+                  } else {
+                    const newValue = current.filter(c => c !== 'whatsapp')
+                    setValue('canal_relatorio', newValue.length > 0 ? newValue : null)
+                  }
+                }}
+              />
+              <Label htmlFor="canal_whatsapp" className="text-sm font-normal cursor-pointer">
+                Receber por WhatsApp
+              </Label>
+            </div>
+          </div>
+          {errors.canal_relatorio && (
+            <p className="text-sm text-destructive">{errors.canal_relatorio.message}</p>
+          )}
         </CardContent>
       </Card>
 

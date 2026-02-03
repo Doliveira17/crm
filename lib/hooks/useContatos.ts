@@ -56,6 +56,12 @@ export function useCreateContato() {
 
   return useMutation({
     mutationFn: async (contato: ContatoInsert) => {
+      console.log('🔵 useCreateContato - Dados recebidos:', contato)
+      
+      // Calcular autorizacao_mensagem baseado em canal_relatorio
+      const canais = contato.canal_relatorio || []
+      const autorizacao = canais.length > 0
+
       const normalized: any = {
         ...contato,
         nome_completo: normalizeText(contato.nome_completo) || '',
@@ -63,9 +69,16 @@ export function useCreateContato() {
         cargo: normalizeText(contato.cargo),
         celular: normalizeDigits(contato.celular),
         email: normalizeEmail(contato.email),
+        data_aniversario: contato.data_aniversario && contato.data_aniversario.trim() !== '' ? contato.data_aniversario : null,
+        pessoa_site: normalizeText(contato.pessoa_site),
+        pessoa_redes: contato.pessoa_redes || null,
         observacoes: normalizeText(contato.observacoes),
+        autorizacao_mensagem: autorizacao,
+        canal_relatorio: contato.canal_relatorio || null,
         updated_at: new Date().toISOString(),
       }
+
+      console.log('🔵 useCreateContato - Dados normalizados:', normalized)
 
       const { data, error } = await supabase
         .from('crm_contatos')
@@ -73,7 +86,12 @@ export function useCreateContato() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('🔴 Erro do Supabase:', error)
+        throw error
+      }
+      
+      console.log('🟢 Contato criado com sucesso:', data)
       return data
     },
     onSuccess: () => {
@@ -81,8 +99,8 @@ export function useCreateContato() {
       toast.success('Contato criado com sucesso')
     },
     onError: (error) => {
+      console.error('🔴 onError capturado:', error)
       toast.error('Erro ao criar contato')
-      console.error(error)
     },
   })
 }
@@ -92,6 +110,10 @@ export function useUpdateContato() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ContatoUpdate }) => {
+      // Calcular autorizacao_mensagem baseado em canal_relatorio
+      const canais = data.canal_relatorio || []
+      const autorizacao = canais.length > 0
+
       const normalized: any = {
         ...data,
         nome_completo: data.nome_completo ? normalizeText(data.nome_completo) || '' : undefined,
@@ -99,7 +121,12 @@ export function useUpdateContato() {
         cargo: normalizeText(data.cargo),
         celular: normalizeDigits(data.celular),
         email: normalizeEmail(data.email),
+        data_aniversario: data.data_aniversario && data.data_aniversario.trim() !== '' ? data.data_aniversario : null,
+        pessoa_site: normalizeText(data.pessoa_site),
+        pessoa_redes: data.pessoa_redes || null,
         observacoes: normalizeText(data.observacoes),
+        autorizacao_mensagem: autorizacao,
+        canal_relatorio: data.canal_relatorio || null,
         updated_at: new Date().toISOString(),
       }
 
