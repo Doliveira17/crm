@@ -40,6 +40,7 @@ export interface Database {
           data_fundacao: string | null
           emp_site: string | null
           ins_municipal: string | null
+          grupo_economico_id: string | null
         }
         Insert: {
           id?: string
@@ -71,6 +72,7 @@ export interface Database {
           data_fundacao?: string | null
           emp_site?: string | null
           ins_municipal?: string | null
+          grupo_economico_id?: string | null
         }
         Update: {
           id?: string
@@ -102,6 +104,7 @@ export interface Database {
           data_fundacao?: string | null
           emp_site?: string | null
           ins_municipal?: string | null
+          grupo_economico_id?: string | null
         }
       }
       crm_contatos: {
@@ -237,6 +240,29 @@ export interface Database {
           enviado_em?: string | null
           visualizado_em?: string | null
           created_at?: string
+        }
+      }
+      grupos_economicos: {
+        Row: {
+          id: string
+          nome: string
+          descricao: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          descricao?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          descricao?: string | null
+          created_at?: string
+          updated_at?: string
         }
       }
     }

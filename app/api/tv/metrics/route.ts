@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
           const { data: cliente } = await supabase
             .from('crm_clientes')
             .select('razao_social')
-            .eq('id', item.cliente_id)
+            .eq('id', rel.cliente_id)
             .single()
           clienteNome = (cliente as any)?.razao_social || null
         }

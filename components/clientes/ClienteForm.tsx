@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { phoneMask, documentMask, cepMask } from '@/lib/utils/masks'
 import { TagsSelector } from './TagsSelector'
+import { GrupoEconomicoSelector } from './GrupoEconomicoSelector'
 import { useState, useEffect } from 'react'
 import { Building2, User, MapPin, Phone, FileText, Save, Star } from 'lucide-react'
 import { toast } from 'sonner'
@@ -50,13 +51,16 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
   })
 
   // Estados locais
-  const [documentoValue, setDocumentoValue] = useState(clienteData?.documento || '')
-  const [telefoneValue, setTelefoneValue] = useState(clienteData?.telefone_principal || '')
-  const [whatsappValue, setWhatsappValue] = useState(clienteData?.whatsapp || '')
-  const [cepValue, setCepValue] = useState(clienteData?.cep || '')
+  const [documentoValue, setDocumentoValue] = useState<string>(clienteData?.documento || '')
+  const [telefoneValue, setTelefoneValue] = useState<string>(clienteData?.telefone_principal || '')
+  const [whatsappValue, setWhatsappValue] = useState<string>(clienteData?.whatsapp || '')
+  const [grupoWhatsappValue, setGrupoWhatsappValue] = useState<string>(clienteData?.grupo_whatsapp || '')
+  const [cepValue, setCepValue] = useState<string>(clienteData?.cep || '')
   const [tags, setTags] = useState<string[]>(clienteData?.tags || [])
   const [hasChanges, setHasChanges] = useState(false)
   const [savedRecently, setSavedRecently] = useState(false)
+  const [grupoEconomicoId, setGrupoEconomicoId] = useState<string | null>(clienteData?.grupo_economico_id || null)
+  const [grupoEconomicoNome, setGrupoEconomicoNome] = useState<string | null>(clienteData?.grupo_economico_nome || null)
 
   const tipoCliente = watch('tipo_cliente')
   const watchedValues = watch()
@@ -73,12 +77,15 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
       
       reset(formData)
       
-      // Atualizar estados locais
-      setDocumentoValue(clienteData.documento || '')
-      setTelefoneValue(clienteData.telefone_principal || '')
-      setWhatsappValue(clienteData.whatsapp || '')
-      setCepValue(clienteData.cep || '')
+      // Atualizar estados locais com fallback garantido
+      setDocumentoValue(clienteData?.documento ?? '')
+      setTelefoneValue(clienteData?.telefone_principal ?? '')
+      setWhatsappValue(clienteData?.whatsapp ?? '')
+      setGrupoWhatsappValue(clienteData?.grupo_whatsapp ?? '')
+      setCepValue(clienteData?.cep ?? '')
       setTags(clienteData.tags || [])
+      setGrupoEconomicoId(clienteData.grupo_economico_id || null)
+      setGrupoEconomicoNome(clienteData.grupo_economico_nome || null)
     }
   }, [clienteData, reset])
 
@@ -90,8 +97,11 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
         documento: documentoValue,
         telefone_principal: telefoneValue,
         whatsapp: whatsappValue,
+        grupo_whatsapp: grupoWhatsappValue,
         cep: cepValue,
         tags,
+        grupo_economico_id: grupoEconomicoId,
+        grupo_economico_nome: grupoEconomicoNome,
       })
       const originalData = JSON.stringify(clienteData)
       const changed = currentData !== originalData
@@ -100,7 +110,8 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
         setSavedRecently(false)
       }
     }
-  }, [watchedValues, documentoValue, telefoneValue, whatsappValue, cepValue, tags, clienteData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentoValue, telefoneValue, whatsappValue, grupoWhatsappValue, cepValue, tags, grupoEconomicoId, grupoEconomicoNome])
 
   // Buscar CEP automático
   const buscarCep = async (cep: string) => {
@@ -131,8 +142,10 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
       documento: documentoValue,
       telefone_principal: telefoneValue,
       whatsapp: whatsappValue,
+      grupo_whatsapp: grupoWhatsappValue,
       cep: cepValue,
       tags,
+      grupo_economico_id: grupoEconomicoId,
     }
     
     try {
@@ -146,7 +159,8 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
       }, 3000)
     } catch (error) {
       // Em caso de erro, não mostrar "Salvo"
-      console.error('Erro ao salvar:', error)
+      console.error('❌ Erro ao salvar cliente:', error)
+      toast.error('Erro ao salvar cliente')
     }
   }
 
@@ -370,6 +384,17 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     placeholder="Cliente, Fornecedor, Parceiro..."
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <GrupoEconomicoSelector
+                    value={grupoEconomicoId}
+                    grupoNome={grupoEconomicoNome}
+                    onChange={(id, nome) => {
+                      setGrupoEconomicoId(id)
+                      setGrupoEconomicoNome(nome)
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -377,7 +402,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
             <div className="space-y-4">
               <div className="flex items-center gap-2 pb-2 border-b">
                 <Phone className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Contato</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Contato Geral</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -411,7 +436,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                   />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium">E-mail</Label>
                   <Input 
                     id="email" 
@@ -423,6 +448,20 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                   {errors.email_principal && (
                     <p className="text-sm text-red-500">{errors.email_principal.message}</p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="grupo_whatsapp" className="text-sm font-medium">Grupo WhatsApp</Label>
+                  <Input
+                    id="grupo_whatsapp"
+                    value={grupoWhatsappValue}
+                    onChange={(e) => {
+                      setGrupoWhatsappValue(e.target.value)
+                      setValue('grupo_whatsapp', e.target.value)
+                    }}
+                    className="w-full"
+                    placeholder="https://chat.whatsapp.com/..."
+                  />
                 </div>
 
                 <div className="space-y-2 md:col-span-2">

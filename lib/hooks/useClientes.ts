@@ -10,25 +10,56 @@ type Cliente = Database['public']['Tables']['crm_clientes']['Row']
 type ClienteInsert = Database['public']['Tables']['crm_clientes']['Insert']
 type ClienteUpdate = Database['public']['Tables']['crm_clientes']['Update']
 
-export function useClientesList(searchTerm = '') {
+export function useClientesList(searchTerm = '', page = 0, pageSize = 100) {
   return useQuery({
-    queryKey: ['clientes', searchTerm],
+    queryKey: ['clientes', searchTerm, page],
     queryFn: async () => {
+      const from = page * pageSize
+      const to = from + pageSize - 1
+      
       let query = supabase
         .from('crm_clientes')
-        .select('*')
+        .select(`
+          *,
+          grupo_economico:grupos_economicos(id, nome)
+        `, { count: 'exact' })
         .order('updated_at', { ascending: false })
+        .range(from, to)
 
       if (searchTerm) {
-        query = query.or(
-          `razao_social.ilike.%${searchTerm}%,nome_fantasia.ilike.%${searchTerm}%,documento.ilike.%${searchTerm}%,telefone_principal.ilike.%${searchTerm}%,email_principal.ilike.%${searchTerm}%`
-        )
+        // Buscar também pelo nome do grupo econômico
+        const { data: grupos } = await supabase
+          .from('grupos_economicos')
+          .select('id')
+          .ilike('nome', `%${searchTerm}%`)
+        
+        const gruposIds = grupos?.map(g => g.id) || []
+        
+        if (gruposIds.length > 0) {
+          query = query.or(
+            `razao_social.ilike.%${searchTerm}%,nome_fantasia.ilike.%${searchTerm}%,documento.ilike.%${searchTerm}%,telefone_principal.ilike.%${searchTerm}%,email_principal.ilike.%${searchTerm}%,grupo_economico_id.in.(${gruposIds.join(',')})`
+          )
+        } else {
+          query = query.or(
+            `razao_social.ilike.%${searchTerm}%,nome_fantasia.ilike.%${searchTerm}%,documento.ilike.%${searchTerm}%,telefone_principal.ilike.%${searchTerm}%,email_principal.ilike.%${searchTerm}%`
+          )
+        }
       }
 
-      const { data, error } = await query
+      const { data, error, count } = await query
 
       if (error) throw error
-      return data as Cliente[]
+      
+      // Adicionar nome do grupo econômico aos dados
+      const clientesComGrupo = (data || []).map((cliente: any) => ({
+        ...cliente,
+        grupo_economico_nome: cliente.grupo_economico?.nome || null,
+      }))
+      
+      return {
+        clientes: clientesComGrupo as Cliente[],
+        total: count || 0
+      }
     },
     staleTime: 30000, // Cache por 30s
   })
@@ -40,12 +71,22 @@ export function useClienteById(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_clientes')
-        .select('*')
+        .select(`
+          *,
+          grupo_economico:grupos_economicos(id, nome)
+        `)
         .eq('id', id)
         .single()
 
       if (error) throw error
-      return data as Cliente
+      
+      // Adicionar nome do grupo econômico aos dados
+      const clienteComGrupo = {
+        ...data,
+        grupo_economico_nome: (data as any).grupo_economico?.nome || null,
+      }
+      
+      return clienteComGrupo as Cliente
     },
     enabled: !!id,
   })
@@ -62,6 +103,7 @@ export function useCreateCliente() {
         documento: normalizeDigits(cliente.documento),
         telefone_principal: normalizeDigits(cliente.telefone_principal),
         whatsapp: normalizeDigits(cliente.whatsapp),
+        grupo_whatsapp: cliente.grupo_whatsapp,
         email_principal: normalizeEmail(cliente.email_principal),
         cep: normalizeDigits(cliente.cep),
         nome_fantasia: normalizeText(cliente.nome_fantasia),
@@ -81,9 +123,10 @@ export function useCreateCliente() {
         tipo_relacionamento: normalizeText(cliente.tipo_relacionamento),
         ins_estadual: normalizeDigits(cliente.ins_estadual),
         emp_redes: normalizeText(cliente.emp_redes),
-        data_fundacao: cliente.data_fundacao,
+        data_fundacao: cliente.data_fundacao && cliente.data_fundacao.trim() !== '' ? cliente.data_fundacao : null,
         emp_site: cliente.emp_site,
         ins_municipal: normalizeDigits(cliente.ins_municipal),
+        grupo_economico_id: cliente.grupo_economico_id || null,
         updated_at: new Date().toISOString(),
       }
 
@@ -126,6 +169,9 @@ export function useUpdateCliente() {
       }
       if (data.whatsapp !== undefined) {
         normalized.whatsapp = normalizeDigits(data.whatsapp)
+      }
+      if (data.grupo_whatsapp !== undefined) {
+        normalized.grupo_whatsapp = data.grupo_whatsapp
       }
       if (data.email_principal !== undefined) {
         normalized.email_principal = normalizeEmail(data.email_principal)
@@ -192,13 +238,16 @@ export function useUpdateCliente() {
         normalized.emp_redes = normalizeText(data.emp_redes)
       }
       if (data.data_fundacao !== undefined) {
-        normalized.data_fundacao = data.data_fundacao
+        normalized.data_fundacao = data.data_fundacao && data.data_fundacao.trim() !== '' ? data.data_fundacao : null
       }
       if (data.emp_site !== undefined) {
         normalized.emp_site = data.emp_site
       }
       if (data.ins_municipal !== undefined) {
         normalized.ins_municipal = normalizeDigits(data.ins_municipal)
+      }
+      if (data.grupo_economico_id !== undefined) {
+        normalized.grupo_economico_id = data.grupo_economico_id
       }
       
       // Sempre atualizar o timestamp

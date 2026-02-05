@@ -113,12 +113,14 @@ export function ClienteContactsPanel({
       })
 
       // Vincular o contato recém-criado
-      await createVinculo.mutateAsync({
-        cliente_id: clienteId,
-        contato_id: novoContato.id,
-        cargo_no_cliente: null,
-        contato_principal: false
-      })
+      if (novoContato?.id) {
+        await createVinculo.mutateAsync({
+          cliente_id: clienteId,
+          contato_id: novoContato.id,
+          cargo_no_cliente: null,
+          contato_principal: false
+        })
+      }
 
       setQuickCreateOpen(false)
       setQuickCreateName('')
@@ -264,46 +266,54 @@ export function ClienteContactsPanel({
                 placeholder="Digite o nome, cargo ou telefone do contato..."
               />
             </div>
-            <div className="space-y-2">
-              <Label>Selecione um contato</Label>
-              {filteredContatos && filteredContatos.length > 0 ? (
-                <Select value={selectedContatoId} onValueChange={setSelectedContatoId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Escolha um contato..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredContatos.map((contato) => (
-                      <SelectItem key={contato.id} value={contato.id}>
-                        {contato.nome_completo}
-                        {contato.cargo && ` - ${contato.cargo}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-center h-10 px-3 py-2 text-sm text-muted-foreground bg-muted rounded-md border">
-                    {searchTerm ? 'Nenhum contato encontrado' : 'Nenhum contato disponível'}
-                  </div>
-                  {showQuickCreate && (
-                    <div className="p-4 border-2 border-dashed border-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Não encontrou o contato? Crie rapidamente:
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleQuickCreate}
-                        className="w-full"
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Criar contato com telefone {searchTerm}
-                      </Button>
-                    </div>
-                  )}
+            {filteredContatos && filteredContatos.length > 0 && (
+              <div className="space-y-2">
+                <Label>Resultados ({filteredContatos.length})</Label>
+                <div className="max-h-60 overflow-y-auto border rounded-md">
+                  {filteredContatos.map((contato) => (
+                    <button
+                      key={contato.id}
+                      type="button"
+                      onClick={() => setSelectedContatoId(contato.id)}
+                      className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors border-b last:border-b-0 ${
+                        selectedContatoId === contato.id ? 'bg-accent' : ''
+                      }`}
+                    >
+                      <div className="font-medium">{contato.nome_completo}</div>
+                      {contato.cargo && (
+                        <div className="text-sm text-muted-foreground">{contato.cargo}</div>
+                      )}
+                      {contato.celular && (
+                        <div className="text-sm text-muted-foreground">{contato.celular}</div>
+                      )}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+            {searchTerm && filteredContatos && filteredContatos.length === 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-center h-10 px-3 py-2 text-sm text-muted-foreground bg-muted rounded-md border">
+                  Nenhum contato encontrado
+                </div>
+                {showQuickCreate && (
+                  <div className="p-4 border-2 border-dashed border-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Não encontrou o contato? Crie rapidamente:
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleQuickCreate}
+                      className="w-full"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Criar contato com telefone {searchTerm}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={handleLinkDialogClose}>
                 Cancelar
@@ -386,16 +396,18 @@ export function ClienteContactsPanel({
                 const novoContato = await createContato.mutateAsync(data)
                 console.log('✅ Contato criado com sucesso:', novoContato)
                 
-                const vinculoData = {
-                  cliente_id: clienteId,
-                  contato_id: novoContato.id,
-                  cargo_no_cliente: data.cargo || null,
-                  contato_principal: false
+                if (novoContato?.id) {
+                  const vinculoData = {
+                    cliente_id: clienteId,
+                    contato_id: novoContato.id,
+                    cargo_no_cliente: data.cargo || null,
+                    contato_principal: false
+                  }
+                  console.log('Criando vínculo com dados:', vinculoData)
+                  
+                  await createVinculo.mutateAsync(vinculoData)
+                  console.log('✅ Vínculo criado com sucesso')
                 }
-                console.log('Criando vínculo com dados:', vinculoData)
-                
-                await createVinculo.mutateAsync(vinculoData)
-                console.log('✅ Vínculo criado com sucesso')
                 
                 setNewContactDialogOpen(false)
                 toast.success('Contato criado e vinculado com sucesso')

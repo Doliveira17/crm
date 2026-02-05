@@ -8,6 +8,7 @@ export const clienteSchema = z.object({
   apelido_relacionamento: z.string().nullable().optional(),
   telefone_principal: z.string().nullable().optional(),
   whatsapp: z.string().nullable().optional(),
+  grupo_whatsapp: z.string().nullable().optional(),
   email_principal: z.string().email('E-mail inválido').nullable().optional().or(z.literal('')),
   logradouro: z.string().nullable().optional(),
   numero: z.string().nullable().optional(),
@@ -30,6 +31,7 @@ export const clienteSchema = z.object({
   data_fundacao: z.string().nullable().optional(), // String para compatibilidade com input date
   emp_site: z.string().url('URL inválida').nullable().optional().or(z.literal('')),
   ins_municipal: z.string().nullable().optional(),
+  grupo_economico_id: z.string().uuid().nullable().optional(),
 }).refine((data) => {
   // Se não tem documento preenchido, passa
   if (!data.documento || data.documento.trim() === '') {

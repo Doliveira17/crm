@@ -329,6 +329,25 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
                 Receber por WhatsApp
               </Label>
             </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="canal_grupo_whatsapp"
+                checked={canalRelatorio?.includes('grupo_whatsapp')}
+                onCheckedChange={(checked) => {
+                  const current = canalRelatorio || []
+                  if (checked) {
+                    setValue('canal_relatorio', [...current.filter(c => c !== 'grupo_whatsapp'), 'grupo_whatsapp'])
+                  } else {
+                    const newValue = current.filter(c => c !== 'grupo_whatsapp')
+                    setValue('canal_relatorio', newValue.length > 0 ? newValue : null)
+                  }
+                }}
+              />
+              <Label htmlFor="canal_grupo_whatsapp" className="text-sm font-normal cursor-pointer">
+                Receber por Grupo WhatsApp
+              </Label>
+            </div>
           </div>
           {errors.canal_relatorio && (
             <p className="text-sm text-destructive">{errors.canal_relatorio.message}</p>

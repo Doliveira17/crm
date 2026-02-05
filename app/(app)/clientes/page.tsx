@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Users, Star, Save } from 'lucide-react'
+import { Plus, Users, Star, Save, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatPhoneBR, formatDocument } from '@/lib/utils/normalize'
 import { formatDate } from '@/lib/utils/format'
 import { toast } from 'sonner'
@@ -26,7 +26,17 @@ import { toast } from 'sonner'
 export default function ClientesPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
-  const { data: clientes, isLoading } = useClientesList(searchTerm)
+  const [page, setPage] = useState(0)
+  const { data, isLoading } = useClientesList(searchTerm, page, 100)
+  
+  const clientes = data?.clientes || []
+  const total = data?.total || 0
+  const totalPages = Math.ceil(total / 100)
+  
+  // Resetar página ao buscar
+  useEffect(() => {
+    setPage(0)
+  }, [searchTerm])
   
   // Estado do auto-save global
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
@@ -99,6 +109,7 @@ export default function ClientesPage() {
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Tipo</TableHead>
+                  <TableHead>Grupo Econômico</TableHead>
                   <TableHead>Tags</TableHead>
                   <TableHead>Documento</TableHead>
                   <TableHead>Telefone</TableHead>
@@ -127,6 +138,13 @@ export default function ClientesPage() {
                       )}
                     </TableCell>
                     <TableCell>
+                      {(cliente as any).grupo_economico_nome && (
+                        <Badge variant="secondary" className="text-xs">
+                          {(cliente as any).grupo_economico_nome}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {cliente.tags?.slice(0, 2).map(tag => (
                           <Badge key={tag} variant="secondary" className="text-xs">
@@ -152,6 +170,40 @@ export default function ClientesPage() {
                 ))}
               </TableBody>
             </Table>
+            
+            {/* Paginação */}
+            {total > 0 && (
+              <div className="flex items-center justify-between px-4 py-4 border-t bg-muted/30">
+                <div className="text-sm text-muted-foreground">
+                  Mostrando {page * 100 + 1} a {Math.min((page + 1) * 100, total)} de {total} cliente{total !== 1 ? 's' : ''}
+                </div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Anterior
+                  </Button>
+                  <div className="text-sm font-medium">
+                    Página {page + 1} de {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={page >= totalPages - 1}
+                  >
+                    Próxima
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
           </div>
         )}
       </Card>
