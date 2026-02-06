@@ -17,7 +17,7 @@ ALTER TABLE public.crm_clientes
 ADD CONSTRAINT crm_clientes_status_chk CHECK (
   (status IS NULL) OR 
   (status = ''::text) OR 
-  (UPPER(status) = ANY(ARRAY['ATIVO'::text, 'INATIVO'::text, 'PROSPECTO'::text, 'SUSPENSO'::text]))
+  (UPPER(status) = ANY(ARRAY['ATIVO'::text, 'INATIVO'::text, 'PROSPECTO'::text, 'SUSPENSO'::text, 'BLOQUEADO'::text]))
 );
 
 -- Adicionar constraint para URL do site (validação básica)
@@ -43,7 +43,7 @@ ON public.crm_clientes USING btree (data_fundacao) TABLESPACE pg_default;
 
 -- Comentários para documentação
 COMMENT ON COLUMN public.crm_clientes.nome_grupo IS 'Nome do grupo empresarial ao qual o cliente pertence';
-COMMENT ON COLUMN public.crm_clientes.status IS 'Status do cliente: ATIVO, INATIVO, PROSPECTO ou SUSPENSO';
+COMMENT ON COLUMN public.crm_clientes.status IS 'Status do cliente: ATIVO, INATIVO, PROSPECTO, SUSPENSO ou BLOQUEADO';
 COMMENT ON COLUMN public.crm_clientes.tipo_relacionamento IS 'Tipo de relacionamento: Cliente, Fornecedor, Parceiro, etc.';
 COMMENT ON COLUMN public.crm_clientes.ins_estadual IS 'Número da inscrição estadual';
 COMMENT ON COLUMN public.crm_clientes.emp_redes IS 'Redes sociais da empresa';

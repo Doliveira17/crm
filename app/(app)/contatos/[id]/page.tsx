@@ -9,9 +9,10 @@ import { ContatoForm } from '@/components/contatos/ContatoForm'
 import { LoadingState } from '@/components/common/LoadingState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { ArrowLeft, Trash2, ShieldAlert } from 'lucide-react'
 import { ContatoFormData } from '@/lib/validators/contato'
 
 export default function ContatoDetailPage() {
@@ -95,9 +96,16 @@ export default function ContatoDetailPage() {
                       href={`/clientes/${vinculo.cliente_id}`}
                       className="flex-1 cursor-pointer"
                     >
-                      <p className="font-medium hover:text-primary hover:underline">
-                        {vinculo.cliente?.razao_social}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium hover:text-primary hover:underline">
+                          {vinculo.cliente?.razao_social}
+                        </p>
+                        {vinculo.cliente?.status === 'BLOQUEADO' && (
+                          <Badge variant="destructive" className="text-xs">
+                            BLOQUEADO
+                          </Badge>
+                        )}
+                      </div>
                       {vinculo.cliente?.tipo_cliente && (
                         <p className="text-sm text-muted-foreground">
                           {vinculo.cliente.tipo_cliente === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}

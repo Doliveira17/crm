@@ -13,8 +13,9 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { phoneMask, documentMask, cepMask } from '@/lib/utils/masks'
 import { TagsSelector } from './TagsSelector'
 import { GrupoEconomicoSelector } from './GrupoEconomicoSelector'
-import { useState, useEffect } from 'react'
-import { Building2, User, MapPin, Phone, FileText, Save, Star } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Building2, User, MapPin, Phone, FileText, Save, Star, ShieldAlert } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -61,8 +62,12 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
   const [savedRecently, setSavedRecently] = useState(false)
   const [grupoEconomicoId, setGrupoEconomicoId] = useState<string | null>(clienteData?.grupo_economico_id || null)
   const [grupoEconomicoNome, setGrupoEconomicoNome] = useState<string | null>(clienteData?.grupo_economico_nome || null)
+  const previousStatusRef = useRef<string | null | undefined>(clienteData?.status)
+  const isInitialMount = useRef(true)
 
   const tipoCliente = watch('tipo_cliente')
+  const statusCliente = watch('status')
+  const isBlocked = statusCliente === 'BLOQUEADO'
   const watchedValues = watch()
 
   // Resetar formulário quando clienteData mudar
@@ -86,8 +91,28 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
       setTags(clienteData.tags || [])
       setGrupoEconomicoId(clienteData.grupo_economico_id || null)
       setGrupoEconomicoNome(clienteData.grupo_economico_nome || null)
+      previousStatusRef.current = clienteData.status
     }
   }, [clienteData, reset])
+
+  // Salvar automaticamente quando status for alterado para BLOQUEADO
+  useEffect(() => {
+    // Pular na montagem inicial
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+
+    // Verificar se o status mudou para BLOQUEADO
+    if (statusCliente === 'BLOQUEADO' && previousStatusRef.current !== 'BLOQUEADO' && clienteData) {
+      toast.info('Cliente bloqueado. Salvando automaticamente...')
+      // Usar handleSubmit para acionar a submissão
+      handleSubmit(handleFormSubmit)()
+    }
+
+    // Atualizar o status anterior
+    previousStatusRef.current = statusCliente
+  }, [statusCliente, clienteData, handleSubmit])
 
   // Detectar mudanças no formulário
   useEffect(() => {
@@ -212,6 +237,25 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
             </div>
           </CardHeader>
 
+          {/* ALERTA DE CLIENTE BLOQUEADO */}
+          {isBlocked && (
+            <div className="mx-6 mt-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-base font-bold text-red-900 mb-1">Cliente Bloqueado</h3>
+                  <p className="text-sm text-red-700">
+                    Este cliente está <strong>BLOQUEADO</strong>. Todos os dados estão protegidos contra edição. 
+                    Para modificar qualquer informação, primeiro altere o status para outra opção.
+                  </p>
+                </div>
+                <Badge variant="destructive" className="whitespace-nowrap flex-shrink-0">
+                  BLOQUEADO
+                </Badge>
+              </div>
+            </div>
+          )}
+
           <CardContent className="p-6 space-y-8">
             
             {/* SEÇÃO: INFORMAÇÕES DA EMPRESA/CLIENTE */}
@@ -227,6 +271,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('razao_social')} 
                     className="w-full"
                     placeholder={tipoCliente === 'PJ' ? 'Digite a razão social' : 'Digite o nome completo'}
+                    disabled={isBlocked}
                   />
                   {errors.razao_social && (
                     <p className="text-sm text-red-500">{errors.razao_social.message}</p>
@@ -248,6 +293,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     className="w-full"
                     placeholder={tipoCliente === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00'}
                     maxLength={tipoCliente === 'PJ' ? 18 : 14}
+                    disabled={isBlocked}
                   />
                   {errors.documento && (
                     <p className="text-sm text-red-500">{errors.documento.message}</p>
@@ -261,7 +307,27 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     type="date" 
                     {...register('cliente_desde')} 
                     className="w-full"
+                    disabled={isBlocked}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status" className="text-sm font-medium">Status</Label>
+                  <Select
+                    value={watch('status') || 'ATIVO'}
+                    onValueChange={(value) => setValue('status', value as 'ATIVO' | 'INATIVO' | 'PROSPECTO' | 'SUSPENSO' | 'BLOQUEADO')}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ATIVO">Ativo</SelectItem>
+                      <SelectItem value="PROSPECTO">Prospecto</SelectItem>
+                      <SelectItem value="INATIVO">Inativo</SelectItem>
+                      <SelectItem value="SUSPENSO">Suspenso</SelectItem>
+                      <SelectItem value="BLOQUEADO">Bloqueado</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -271,6 +337,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('apelido_relacionamento')} 
                     className="w-full"
                     placeholder="Como prefere ser chamado"
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -283,6 +350,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                         {...register('nome_fantasia')} 
                         className="w-full"
                         placeholder="Nome comercial da empresa"
+                        disabled={isBlocked}
                       />
                     </div>
 
@@ -293,6 +361,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                         {...register('nome_grupo')} 
                         className="w-full"
                         placeholder="Ex: Grupo ABC"
+                        disabled={isBlocked}
                       />
                     </div>
 
@@ -303,6 +372,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                         {...register('ins_estadual')} 
                         className="w-full"
                         placeholder="000.000.000.000"
+                        disabled={isBlocked}
                       />
                     </div>
 
@@ -313,6 +383,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                         {...register('ins_municipal')} 
                         className="w-full"
                         placeholder="0000000-0"
+                        disabled={isBlocked}
                       />
                     </div>
 
@@ -323,6 +394,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                         type="date" 
                         {...register('data_fundacao')} 
                         className="w-full"
+                        disabled={isBlocked}
                       />
                     </div>
 
@@ -333,6 +405,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                         {...register('emp_site')} 
                         className="w-full"
                         placeholder="https://www.exemplo.com.br"
+                        disabled={isBlocked}
                       />
                       {errors.emp_site && (
                         <p className="text-sm text-red-500">{errors.emp_site.message}</p>
@@ -346,28 +419,21 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                         {...register('emp_redes')}
                         className="w-full min-h-[70px] resize-none"
                         placeholder="Instagram: @empresa&#10;Facebook: /empresa&#10;LinkedIn: /company/empresa"
+                        disabled={isBlocked}
                       />
                     </div>
                   </>
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="tipo_relacionamento" className="text-sm font-medium">Relacionamento</Label>
-                  <Input 
-                    id="tipo_relacionamento" 
-                    {...register('tipo_relacionamento')} 
-                    className="w-full"
-                    placeholder="Cliente, Fornecedor, Parceiro..."
-                  />
-                </div>
-
-                <div className="space-y-2">
                   <GrupoEconomicoSelector
                     value={grupoEconomicoId}
                     grupoNome={grupoEconomicoNome}
                     onChange={(id, nome) => {
-                      setGrupoEconomicoId(id)
-                      setGrupoEconomicoNome(nome)
+                      if (!isBlocked) {
+                        setGrupoEconomicoId(id)
+                        setGrupoEconomicoNome(nome)
+                      }
                     }}
                   />
                 </div>
@@ -394,6 +460,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     }}
                     className="w-full"
                     placeholder="(00) 00000-0000"
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -409,6 +476,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     }}
                     className="w-full"
                     placeholder="(00) 00000-0000"
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -420,6 +488,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('email_principal')} 
                     className="w-full"
                     placeholder="contato@empresa.com"
+                    disabled={isBlocked}
                   />
                   {errors.email_principal && (
                     <p className="text-sm text-red-500">{errors.email_principal.message}</p>
@@ -437,6 +506,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     }}
                     className="w-full"
                     placeholder="https://chat.whatsapp.com/..."
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -447,6 +517,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('observacoes')}
                     className="w-full min-h-[70px] resize-none"
                     placeholder="Observações sobre o cliente..."
+                    disabled={isBlocked}
                   />
                 </div>
               </div>
@@ -476,6 +547,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     className="w-full"
                     placeholder="00000-000"
                     maxLength={9}
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -486,6 +558,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('logradouro')} 
                     className="w-full"
                     placeholder="Rua, Avenida, etc."
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -496,6 +569,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('numero')} 
                     className="w-full"
                     placeholder="123"
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -506,6 +580,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('complemento')} 
                     className="w-full"
                     placeholder="Apt, Sala, etc."
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -516,6 +591,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('bairro')} 
                     className="w-full"
                     placeholder="Nome do bairro"
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -526,6 +602,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('municipio')} 
                     className="w-full"
                     placeholder="Nome da cidade"
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -537,6 +614,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     className="w-full"
                     placeholder="UF"
                     maxLength={2}
+                    disabled={isBlocked}
                   />
                 </div>
 
@@ -547,6 +625,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('pais')} 
                     className="w-full"
                     defaultValue="Brasil"
+                    disabled={isBlocked}
                   />
                 </div>
               </div>
@@ -565,6 +644,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     id="favorito"
                     checked={!!watch('favorito')}
                     onCheckedChange={(checked) => setValue('favorito', checked as boolean)}
+                    disabled={isBlocked}
                   />
                   <Label htmlFor="favorito" className="text-sm font-medium cursor-pointer flex items-center gap-2">
                     <Star className="h-4 w-4 text-yellow-500" />
@@ -576,7 +656,11 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                   <Label htmlFor="tags" className="text-sm font-medium">Tags</Label>
                   <TagsSelector 
                     selectedTags={tags}
-                    onChange={setTags}
+                    onChange={(newTags) => { 
+                      if (!isBlocked) { 
+                        setTags(newTags) 
+                      }
+                    }}
                   />
                 </div>
 
@@ -587,6 +671,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     {...register('observacoes_extras')}
                     className="w-full min-h-[80px] resize-none"
                     placeholder="Informações extras, histórico, etc..."
+                    disabled={isBlocked}
                   />
                 </div>
               </div>
@@ -609,7 +694,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
 
           <Button 
             type="submit" 
-            disabled={isSubmitting || loading}
+            disabled={isSubmitting || loading || isBlocked}
             className="w-full sm:w-auto order-1 sm:order-2"
             size="lg"
           >

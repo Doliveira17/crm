@@ -131,7 +131,14 @@ export default function ClientesPage() {
                       )}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {cliente.razao_social}
+                      <div className="flex items-center gap-2">
+                        <span>{cliente.razao_social}</span>
+                        {cliente.status === 'BLOQUEADO' && (
+                          <Badge variant="destructive" className="text-xs">
+                            BLOQUEADO
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {cliente.tipo_cliente && (

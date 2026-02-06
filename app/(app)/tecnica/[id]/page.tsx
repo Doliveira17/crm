@@ -9,6 +9,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
+import { Badge } from '@/components/ui/badge'
+import { ShieldAlert } from 'lucide-react'
 
 export default function TecnicaDetailPage() {
   const router = useRouter()
@@ -110,14 +112,37 @@ export default function TecnicaDetailPage() {
     documento: cliente.documento,
   }
 
+  const isClienteBlocked = cliente.status === 'BLOQUEADO'
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
+        {isClienteBlocked && (
+          <Card className="mb-6 border-red-200 bg-red-50">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-base font-bold text-red-900 mb-1">Cliente Bloqueado</h3>
+                  <p className="text-sm text-red-700">
+                    Este cliente está <strong>BLOQUEADO</strong>. Os dados técnicos não podem ser editados. 
+                    Para modificar as informações, primeiro altere o status do cliente.
+                  </p>
+                </div>
+                <Badge variant="destructive" className="whitespace-nowrap flex-shrink-0">
+                  BLOQUEADO
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         <ClienteTecnicaForm
           tecnica={initialData}
           initialData={initialData}
           onSubmit={handleSubmit}
           onCancel={() => router.push('/tecnica')}
+          isClienteBlocked={isClienteBlocked}
+          clienteNome={cliente.razao_social}
         />
       </div>
     </div>

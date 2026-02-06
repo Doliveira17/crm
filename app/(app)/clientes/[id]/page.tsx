@@ -11,7 +11,8 @@ import { LoadingState } from '@/components/common/LoadingState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Trash2, Star, Users, Wrench } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Trash2, Star, Users, Wrench, ShieldAlert } from 'lucide-react'
 import { ClienteFormData } from '@/lib/validators/cliente'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -74,6 +75,11 @@ export default function ClienteDetailPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold">{cliente.razao_social}</h1>
+              {cliente.status === 'BLOQUEADO' && (
+                <Badge variant="destructive">
+                  BLOQUEADO
+                </Badge>
+              )}
               <Button
                 variant="ghost"
                 size="icon"

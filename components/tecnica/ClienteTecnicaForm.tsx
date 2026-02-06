@@ -20,9 +20,11 @@ interface ClienteTecnicaFormProps {
   onSubmit: (data: ClienteTecnicaFormData) => void | Promise<void>
   onCancel?: () => void
   loading?: boolean
+  isClienteBlocked?: boolean
+  clienteNome?: string
 }
 
-export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, loading }: ClienteTecnicaFormProps) {
+export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, loading, isClienteBlocked = false, clienteNome }: ClienteTecnicaFormProps) {
   const router = useRouter()
   const tecnicaData = initialData || tecnica
 
@@ -106,6 +108,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('nome_planta')}
                     className="w-full h-10 text-base"
                     placeholder="Ex: Planta São Paulo"
+                    disabled={isClienteBlocked}
                   />
                 </div>
 
@@ -114,6 +117,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                   <Select
                     value={watch('modalidade') || ''}
                     onValueChange={(value) => setValue('modalidade', value)}
+                    disabled={isClienteBlocked}
                   >
                     <SelectTrigger className="w-full h-10 text-base">
                       <SelectValue placeholder="Selecione..." />
@@ -132,6 +136,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                   <Select
                     value={watch('classificacao') || ''}
                     onValueChange={(value) => setValue('classificacao', value)}
+                    disabled={isClienteBlocked}
                   >
                     <SelectTrigger className="w-full h-10 text-base">
                       <SelectValue placeholder="Selecione..." />
@@ -149,6 +154,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                   <Select
                     value={watch('tipo_local') || ''}
                     onValueChange={(value) => setValue('tipo_local', value)}
+                    disabled={isClienteBlocked}
                   >
                     <SelectTrigger className="w-full h-10 text-base">
                       <SelectValue placeholder="Selecione..." />
@@ -171,6 +177,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('potencia_usina_kwp', { valueAsNumber: true })}
                     className="w-full h-10 text-base"
                     placeholder="Ex: 5.5"
+                    disabled={isClienteBlocked}
                   />
                 </div>
 
@@ -181,6 +188,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                       checked={posssuiInternet}
                       onCheckedChange={(checked) => setPossuiInternet(checked as boolean)}
                       className="h-5 w-5"
+                      disabled={isClienteBlocked}
                     />
                     <Label htmlFor="possui_internet" className="text-base font-semibold cursor-pointer flex items-center gap-2 whitespace-nowrap m-0">
                       <Wifi className="h-5 w-5 text-blue-600" />
@@ -206,6 +214,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     type="date"
                     {...register('data_install')}
                     className="w-full h-10 text-base"
+                    disabled={isClienteBlocked}
                   />
                 </div>
 
@@ -216,6 +225,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     type="date"
                     {...register('venc_garantia')}
                     className="w-full h-10 text-base"
+                    disabled={isClienteBlocked}
                   />
                 </div>
 
@@ -224,6 +234,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                   <Select
                     value={watch('garantia_extendida') || ''}
                     onValueChange={(value) => setValue('garantia_extendida', value)}
+                    disabled={isClienteBlocked}
                   >
                     <SelectTrigger className="w-full h-10 text-base">
                       <SelectValue placeholder="Selecione..." />
@@ -253,6 +264,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('quant_inverter', { valueAsNumber: true })}
                     className="w-full h-10 text-base"
                     placeholder="Ex: 2"
+                    disabled={isClienteBlocked}
                   />
                 </div>
 
@@ -263,6 +275,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('marca_inverter')}
                     className="w-full h-10 text-base"
                     placeholder="Ex: Fronius"
+                    disabled={isClienteBlocked}
                   />
                 </div>
 
@@ -273,6 +286,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('mod_inverter')}
                     className="w-full h-10 text-base"
                     placeholder="Ex: Primo GEN24"
+                    disabled={isClienteBlocked}
                   />
                 </div>
 
@@ -283,6 +297,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('serie_inverter')}
                     className="w-full h-10 text-base"
                     placeholder="Número de série do inversor"
+                    disabled={isClienteBlocked}
                   />
                 </div>
               </div>
@@ -304,6 +319,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('quant_modulos', { valueAsNumber: true })}
                     className="w-full h-10 text-base"
                     placeholder="Ex: 20"
+                    disabled={isClienteBlocked}
                   />
                 </div>
 
@@ -314,6 +330,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('marca_modulos')}
                     className="w-full h-10 text-base"
                     placeholder="Ex: Canadian Solar"
+                    disabled={isClienteBlocked}
                   />
                 </div>
 
@@ -324,6 +341,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('mod_modulos')}
                     className="w-full h-10 text-base"
                     placeholder="Ex: BiHiKu8"
+                    disabled={isClienteBlocked}
                   />
                 </div>
               </div>
@@ -345,7 +363,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
 
           <Button
             type="submit"
-            disabled={isSubmitting || loading}
+            disabled={isSubmitting || loading || isClienteBlocked}
             className="w-full sm:w-auto order-1 sm:order-2"
             size="lg"
           >
