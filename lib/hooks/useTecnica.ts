@@ -48,6 +48,7 @@ export function useTecnica() {
             possui_internet: tecnica?.possui_internet || false,
             data_install: tecnica?.data_install,
             venc_garantia: tecnica?.venc_garantia,
+            garantia_extendida: tecnica?.garantia_extendida,
             potencia_usina_kwp: tecnica?.potencia_usina_kwp,
             quant_inverter: tecnica?.quant_inverter,
             marca_inverter: tecnica?.marca_inverter,

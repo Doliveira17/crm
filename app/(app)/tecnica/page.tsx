@@ -17,30 +17,91 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Cpu, AlertCircle } from 'lucide-react'
+import { Cpu, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDocument } from '@/lib/utils/normalize'
+
+// Função para normalizar texto removendo acentos
+const normalizeText = (text: string): string => {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+// Função de busca avançada
+const searchInTecnica = (tecnica: any, searchTerms: string[]): boolean => {
+  // Criar array com todos os campos pesquisáveis
+  const searchableFields = [
+    tecnica.documento,
+    formatDocument(tecnica.documento), // Documento formatado
+    tecnica.razao_social,
+    tecnica.nome_planta,
+    tecnica.modalidade,
+    tecnica.classificacao,
+    tecnica.tipo_local,
+    tecnica.marca_inverter,
+    tecnica.mod_inverter,
+    tecnica.serie_inverter,
+    tecnica.marca_modulos,
+    tecnica.mod_modulos,
+    tecnica.potencia_usina_kwp?.toString(),
+    tecnica.quant_inverter?.toString(),
+    tecnica.quant_modulos?.toString(),
+    tecnica.possui_internet ? 'sim' : 'não',
+    tecnica.possui_internet ? 'internet' : 'sem internet',
+  ]
+
+  // Normalizar todos os campos
+  const normalizedFields = searchableFields
+    .filter(field => field != null && field !== '')
+    .map(field => normalizeText(String(field)))
+
+  // Cada termo de busca deve encontrar pelo menos um campo
+  return searchTerms.every(term => 
+    normalizedFields.some(field => field.includes(term))
+  )
+}
 
 export default function TecnicaPage() {
   const router = useRouter()
   const { data: tecnicaList, isLoading, error } = useTecnica()
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredData, setFilteredData] = useState<any[]>([])
+  const [page, setPage] = useState(0)
+  const itemsPerPage = 100
 
   useEffect(() => {
     if (!tecnicaList) return
 
-    const filtered = tecnicaList.filter((tecnica: any) => {
-      const searchLower = searchTerm.toLowerCase()
-      return (
-        (tecnica.documento?.toLowerCase().includes(searchLower)) ||
-        (tecnica.razao_social?.toLowerCase().includes(searchLower)) ||
-        (tecnica.nome_planta?.toLowerCase().includes(searchLower))
-      )
-    })
+    // Se não há busca, mostrar todos
+    if (!searchTerm.trim()) {
+      setFilteredData(tecnicaList)
+      setPage(0)
+      return
+    }
+
+    // Dividir o termo de busca em múltiplos termos (por espaço)
+    const searchTerms = searchTerm
+      .trim()
+      .split(/\s+/)
+      .map(term => normalizeText(term))
+      .filter(term => term.length > 0)
+
+    // Filtrar usando a busca avançada
+    const filtered = tecnicaList.filter((tecnica: any) => 
+      searchInTecnica(tecnica, searchTerms)
+    )
 
     setFilteredData(filtered)
+    setPage(0) // Resetar página ao buscar
   }, [searchTerm, tecnicaList])
+
+  // Calcular dados paginados
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage)
+  const paginatedData = filteredData.slice(page * itemsPerPage, (page + 1) * itemsPerPage)
+  const total = filteredData.length
 
   if (error) {
     return (
@@ -69,13 +130,13 @@ export default function TecnicaPage() {
           <SearchInput
             value={searchTerm}
             onChange={setSearchTerm}
-            placeholder="Buscar por documento, razão social ou planta..."
+            placeholder="Buscar por nome, documento, planta, modalidade, classificação, marcas, modelos..."
           />
         </div>
 
         {isLoading ? (
           <LoadingState />
-        ) : !filteredData || filteredData.length === 0 ? (
+        ) : !paginatedData || paginatedData.length === 0 ? (
           <EmptyState
             icon={<Cpu className="h-12 w-12" />}
             title="Nenhum dado técnico encontrado"
@@ -90,22 +151,22 @@ export default function TecnicaPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Razão Social</TableHead>
+                  <TableHead>Nome</TableHead>
                   <TableHead>Documento</TableHead>
                   <TableHead>Nome da Planta</TableHead>
-                  <TableHead>Potência (kWp)</TableHead>
                   <TableHead>Modalidade</TableHead>
                   <TableHead>Classificação</TableHead>
+                  <TableHead>Potência (kWp)</TableHead>
                   <TableHead>Inversores</TableHead>
                   <TableHead>Painéis</TableHead>
                   <TableHead>Internet</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((tecnica: any) => (
+                {paginatedData.map((tecnica: any) => (
                   <TableRow
                     key={tecnica.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="cursor-pointer"
                     onClick={() => router.push(`/tecnica/${tecnica.id}`)}
                   >
                     <TableCell className="font-medium">
@@ -114,24 +175,24 @@ export default function TecnicaPage() {
                     <TableCell>{formatDocument(tecnica.documento)}</TableCell>
                     <TableCell>{tecnica.nome_planta || '—'}</TableCell>
                     <TableCell>
-                      {tecnica.potencia_usina_kwp ? (
-                        <span className="font-semibold text-blue-600">
-                          {tecnica.potencia_usina_kwp} kWp
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </TableCell>
-                    <TableCell>
                       {tecnica.modalidade ? (
-                        <Badge variant="outline">{tecnica.modalidade}</Badge>
+                        <Badge variant="outline" className="text-xs">{tecnica.modalidade}</Badge>
                       ) : (
                         '—'
                       )}
                     </TableCell>
                     <TableCell>
                       {tecnica.classificacao ? (
-                        <Badge variant="secondary">{tecnica.classificacao}</Badge>
+                        <Badge variant="secondary" className="text-xs">{tecnica.classificacao}</Badge>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {tecnica.potencia_usina_kwp ? (
+                        <span className="font-semibold text-gray-900">
+                          {tecnica.potencia_usina_kwp} kWp
+                        </span>
                       ) : (
                         '—'
                       )}
@@ -143,7 +204,7 @@ export default function TecnicaPage() {
                       {tecnica.quant_modulos ? `${tecnica.quant_modulos} un.` : '—'}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={tecnica.possui_internet ? 'default' : 'secondary'}>
+                      <Badge variant={tecnica.possui_internet ? 'default' : 'secondary'} className="text-xs">
                         {tecnica.possui_internet ? 'Sim' : 'Não'}
                       </Badge>
                     </TableCell>
@@ -152,18 +213,37 @@ export default function TecnicaPage() {
               </TableBody>
             </Table>
 
-            {/* Resumo */}
-            {filteredData.length > 0 && (
+            {/* Paginação */}
+            {total > 0 && (
               <div className="flex items-center justify-between px-4 py-4 border-t bg-muted/30">
                 <div className="text-sm text-muted-foreground">
-                  Mostrando <span className="font-semibold text-foreground">{filteredData.length}</span>{' '}
-                  {filteredData.length === 1 ? 'registro' : 'registros'}
-                  {tecnicaList && filteredData.length < tecnicaList.length && (
-                    <>
-                      {' '}de <span className="font-semibold text-foreground">{tecnicaList.length}</span>
-                    </>
-                  )}
+                  Mostrando {page * itemsPerPage + 1} a {Math.min((page + 1) * itemsPerPage, total)} de {total} registro{total !== 1 ? 's' : ''}
                 </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.max(0, p - 1))}
+                      disabled={page === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Anterior
+                    </Button>
+                    <div className="text-sm font-medium">
+                      Página {page + 1} de {totalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={page >= totalPages - 1}
+                    >
+                      Próxima
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

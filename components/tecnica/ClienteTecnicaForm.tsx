@@ -154,10 +154,10 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                       <SelectValue placeholder="Selecione..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Telhado">Telhado</SelectItem>
-                      <SelectItem value="Solo">Solo</SelectItem>
-                      <SelectItem value="Fachada">Fachada</SelectItem>
-                      <SelectItem value="Estrutura">Estrutura</SelectItem>
+                      <SelectItem value="Solo próprio">Solo próprio</SelectItem>
+                      <SelectItem value="Telhado próprio">Telhado próprio</SelectItem>
+                      <SelectItem value="Solo arrendado">Solo arrendado</SelectItem>
+                      <SelectItem value="Telhado arrendado">Telhado arrendado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -198,7 +198,7 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                 <h3 className="text-xl font-bold text-gray-900">Cronograma</h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3">
                   <Label htmlFor="data_install" className="text-base font-semibold">Data de Instalação</Label>
                   <Input
@@ -217,6 +217,22 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
                     {...register('venc_garantia')}
                     className="w-full h-10 text-base"
                   />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="garantia_extendida" className="text-base font-semibold">Possui Garantia Extendida?</Label>
+                  <Select
+                    value={watch('garantia_extendida') || ''}
+                    onValueChange={(value) => setValue('garantia_extendida', value)}
+                  >
+                    <SelectTrigger className="w-full h-10 text-base">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Sim">Sim</SelectItem>
+                      <SelectItem value="Não">Não</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

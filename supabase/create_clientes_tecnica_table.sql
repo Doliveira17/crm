@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.crm_clientes_tecnica (
     -- Datas
     data_install DATE,
     venc_garantia DATE,
+    garantia_extendida TEXT,
     
     -- Especificações da usina
     potencia_usina_kwp NUMERIC(10, 2),

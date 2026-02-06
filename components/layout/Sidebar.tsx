@@ -19,6 +19,11 @@ const navItems = [
     icon: Users,
   },
   {
+    title: 'Dados Técnicos',
+    href: '/tecnica',
+    icon: Wrench,
+  },
+  {
     title: 'Interações',
     href: '/interacoes',
     icon: MessageSquare,
@@ -32,11 +37,6 @@ const navItems = [
     title: 'Faturas',
     href: '/faturas',
     icon: Zap,
-  },
-  {
-    title: 'Técnica',
-    href: '/tecnica',
-    icon: Wrench,
   },
   {
     title: 'Relatórios',

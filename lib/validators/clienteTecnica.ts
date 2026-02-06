@@ -10,6 +10,7 @@ export const clienteTecnicaSchema = z.object({
   possui_internet: z.boolean().nullable().optional(),
   data_install: z.string().nullable().optional(),
   venc_garantia: z.string().nullable().optional(),
+  garantia_extendida: z.string().nullable().optional(),
   tipo_local: z.string().nullable().optional(),
   potencia_usina_kwp: z.number().nullable().optional(),
   quant_inverter: z.number().nullable().optional(),

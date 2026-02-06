@@ -11,7 +11,7 @@ import { LoadingState } from '@/components/common/LoadingState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Trash2, Star, Users } from 'lucide-react'
+import { ArrowLeft, Trash2, Star, Users, Wrench } from 'lucide-react'
 import { ClienteFormData } from '@/lib/validators/cliente'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -129,6 +129,15 @@ export default function ClienteDetailPage() {
                 onDeleteVinculo={handleDeleteVinculo}
                 onSetPrincipal={handleSetPrincipal}
               />
+              
+              <div className="mt-6 pt-4 border-t">
+                <Link href={`/tecnica/${clienteId}`}>
+                  <Button variant="outline" className="w-full" size="lg">
+                    <Wrench className="mr-2 h-4 w-4" />
+                    Dados Técnicos
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>
