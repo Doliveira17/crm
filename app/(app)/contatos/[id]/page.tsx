@@ -43,15 +43,18 @@ export default function ContatoDetailPage() {
     router.push('/contatos')
   }
 
+  const handleCancel = () => {
+    // Usar router.back() para voltar à página anterior (mais confiável)
+    router.back()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/contatos">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" onClick={handleCancel}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <div>
             <h1 className="text-3xl font-bold">{contato.nome_completo}</h1>
             <p className="text-muted-foreground">Editar informações do contato</p>
@@ -70,7 +73,7 @@ export default function ContatoDetailPage() {
       <ContatoForm
         initialData={contato as any}
         onSubmit={handleUpdate}
-        onCancel={() => router.push('/contatos')}
+        onCancel={handleCancel}
         loading={updateContato.isPending}
       />
 

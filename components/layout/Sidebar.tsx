@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, FileText, MessageSquare, Tag, Zap, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, MessageSquare, Tag, Zap, ChevronLeft, ChevronRight, Wrench } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 
@@ -32,6 +32,11 @@ const navItems = [
     title: 'Faturas',
     href: '/faturas',
     icon: Zap,
+  },
+  {
+    title: 'Técnica',
+    href: '/tecnica',
+    icon: Wrench,
   },
   {
     title: 'Relatórios',

@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { phoneMask, documentMask, cepMask } from '@/lib/utils/masks'
 import { TagsSelector } from './TagsSelector'
 import { useState, useEffect } from 'react'
-import { Building2, User, MapPin, Phone, FileText, Save } from 'lucide-react'
+import { Building2, User, MapPin, Phone, FileText, Save, Handshake, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -39,6 +39,7 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
       status: 'ATIVO',
       pais: 'Brasil',
       ...cliente,
+      tipos_relacionamento: cliente?.tipos_relacionamento || [],
     },
   })
 
@@ -50,6 +51,8 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
   const [tags, setTags] = useState<string[]>(cliente?.tags || [])
   const [activeTab, setActiveTab] = useState('dados')
   const [hasChanges, setHasChanges] = useState(false)
+  const [tiposRelacionamento, setTiposRelacionamento] = useState<string[]>(cliente?.tipos_relacionamento || [])
+  const [isRelacionamentoExpanded, setIsRelacionamentoExpanded] = useState(true)
 
   // Auto-save simples
   const watchedValues = watch()
@@ -59,6 +62,12 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
       setHasChanges(hasFormChanges)
     }
   }, [watchedValues, cliente])
+
+  // Sincronizar tiposRelacionamento com o formulário
+  useEffect(() => {
+    setValue('tipos_relacionamento', tiposRelacionamento as any)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiposRelacionamento])
 
   // Função para buscar CEP
   const buscarCep = async (cep: string) => {
@@ -90,12 +99,26 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
       whatsapp: whatsappValue,
       cep: cepValue,
       tags,
+      tipos_relacionamento: tiposRelacionamento.length > 0 ? tiposRelacionamento : null,
+    }
+    onSubmit(formData)
+  }
+
+  const handleFormSubmit = (data: ClienteFormData) => {
+    const formData = {
+      ...data,
+      documento: documentoValue,
+      telefone: telefoneValue,
+      whatsapp: whatsappValue,
+      cep: cepValue,
+      tags,
+      tipos_relacionamento: tiposRelacionamento.length > 0 ? tiposRelacionamento : null,
     }
     onSubmit(formData)
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -153,21 +176,7 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tipo_cliente">Tipo de Cliente</Label>
-                  <Select
-                    value={tipoCliente || ''}
-                    onValueChange={(value) => setValue('tipo_cliente', value as 'PF' | 'PJ')}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PF">Pessoa Física</SelectItem>
-                      <SelectItem value="PJ">Pessoa Jurídica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Campo 'Tipo de Cliente' removido da UI por solicitação */}
 
                 <div className="space-y-2">
                   <Label htmlFor="documento">
@@ -219,9 +228,80 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tipo_relacionamento">Tipo de Relacionamento</Label>
-                  <Input id="tipo_relacionamento" {...register('tipo_relacionamento')} placeholder="Ex: Cliente, Fornecedor, Parceiro" />
+                <div className="space-y-2 md:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRelacionamentoExpanded(!isRelacionamentoExpanded)}
+                    className="w-full flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    <Handshake className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <span className="text-sm font-medium text-gray-900 flex-1 text-left">Tipo de Relacionamento</span>
+                    <ChevronDown 
+                      className={`h-4 w-4 text-gray-600 flex-shrink-0 transition-transform duration-200 ${isRelacionamentoExpanded ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  
+                  {isRelacionamentoExpanded && (
+                    <div className="space-y-3 mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      {/* Grid de checkboxes em 3 colunas */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {[
+                          'Atendimento Avulso',
+                          'Contrato O&M',
+                          'Gestão de Creditos',
+                          'O&M com garantia Estendida',
+                          'Sem Atendimento',
+                          'VIP',
+                          'VIP com Contrato O&M'
+                        ].map((tipo) => (
+                          <label 
+                            key={tipo}
+                            className="flex items-center space-x-3 p-2.5 rounded-lg border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={tiposRelacionamento.includes(tipo)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setTiposRelacionamento([...tiposRelacionamento, tipo])
+                                } else {
+                                  setTiposRelacionamento(tiposRelacionamento.filter(t => t !== tipo))
+                                }
+                              }}
+                              id={`tipo-${tipo}`}
+                              className="flex-shrink-0"
+                            />
+                            <span className="text-xs sm:text-sm font-medium flex-1">
+                              {tipo}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+
+                      {/* Exibição dos tipos selecionados como badges */}
+                      {tiposRelacionamento.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-gray-300">
+                          <p className="text-xs text-gray-600 mb-2 font-medium">Selecionados:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {tiposRelacionamento.map((tipo) => (
+                              <div 
+                                key={tipo}
+                                className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm font-medium"
+                              >
+                                <span>{tipo}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setTiposRelacionamento(tiposRelacionamento.filter(t => t !== tipo))}
+                                  className="hover:text-blue-900 transition-colors"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>

@@ -217,7 +217,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
             {/* SEÇÃO: INFORMAÇÕES DA EMPRESA/CLIENTE */}
             <div className="space-y-4">
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="razao_social" className="text-sm font-medium">
                     {tipoCliente === 'PJ' ? 'Razão Social' : 'Nome Completo'} <span className="text-red-500">*</span>
@@ -231,22 +231,6 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                   {errors.razao_social && (
                     <p className="text-sm text-red-500">{errors.razao_social.message}</p>
                   )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tipo_cliente" className="text-sm font-medium">Tipo de Cliente</Label>
-                  <Select
-                    value={tipoCliente || ''}
-                    onValueChange={(value) => setValue('tipo_cliente', value as 'PF' | 'PJ')}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PF">Pessoa Física</SelectItem>
-                      <SelectItem value="PJ">Pessoa Jurídica</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -268,6 +252,16 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                   {errors.documento && (
                     <p className="text-sm text-red-500">{errors.documento.message}</p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cliente_desde" className="text-sm font-medium">Cliente Desde</Label>
+                  <Input 
+                    id="cliente_desde" 
+                    type="date" 
+                    {...register('cliente_desde')} 
+                    className="w-full"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -332,7 +326,7 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                       />
                     </div>
 
-                    <div className="space-y-2 md:col-span-2">
+                    <div className="space-y-2">
                       <Label htmlFor="emp_site" className="text-sm font-medium">Site da Empresa</Label>
                       <Input 
                         id="emp_site" 
@@ -356,24 +350,6 @@ export function ClienteForm({ cliente, initialData, onSubmit, onCancel, loading 
                     </div>
                   </>
                 )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="status" className="text-sm font-medium">Status</Label>
-                  <Select
-                    value={watch('status') || 'ATIVO'}
-                    onValueChange={(value) => setValue('status', value as 'ATIVO' | 'INATIVO' | 'PROSPECTO' | 'SUSPENSO')}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ATIVO">Ativo</SelectItem>
-                      <SelectItem value="PROSPECTO">Prospecto</SelectItem>
-                      <SelectItem value="INATIVO">Inativo</SelectItem>
-                      <SelectItem value="SUSPENSO">Suspenso</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="tipo_relacionamento" className="text-sm font-medium">Relacionamento</Label>

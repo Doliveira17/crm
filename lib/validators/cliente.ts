@@ -24,14 +24,17 @@ export const clienteSchema = z.object({
   favorito: z.boolean().nullable().optional(),
   // Novos campos
   nome_grupo: z.string().nullable().optional(),
-  status: z.enum(['ATIVO', 'INATIVO', 'PROSPECTO', 'SUSPENSO']).nullable().optional(),
-  tipo_relacionamento: z.string().nullable().optional(),
+  status: z.enum(['ATIVO', 'INATIVO', 'PROSPECTO', 'SUSPENSO', 'BLOQUEADO']).nullable().optional(),
+  tipos_relacionamento: z.array(z.string()).nullable().optional(),
   ins_estadual: z.string().nullable().optional(),
   emp_redes: z.string().nullable().optional(),
   data_fundacao: z.string().nullable().optional(), // String para compatibilidade com input date
   emp_site: z.string().url('URL inválida').nullable().optional().or(z.literal('')),
   ins_municipal: z.string().nullable().optional(),
   grupo_economico_id: z.string().uuid().nullable().optional(),
+  origem: z.string().nullable().optional(),
+  quem_e: z.string().nullable().optional(),
+  cliente_desde: z.string().nullable().optional(), // String para compatibilidade com input date
 }).refine((data) => {
   // Se não tem documento preenchido, passa
   if (!data.documento || data.documento.trim() === '') {

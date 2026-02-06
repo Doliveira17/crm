@@ -18,10 +18,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Users, Star, Save, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Users, Star, Save, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 import { formatPhoneBR, formatDocument } from '@/lib/utils/normalize'
 import { formatDate } from '@/lib/utils/format'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase/client'
 
 export default function ClientesPage() {
   const router = useRouter()

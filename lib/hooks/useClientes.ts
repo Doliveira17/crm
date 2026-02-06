@@ -97,38 +97,53 @@ export function useCreateCliente() {
 
   return useMutation({
     mutationFn: async (cliente: ClienteInsert) => {
+      // Construir objeto apenas com campos que existem na tabela
       const normalized: any = {
-        ...cliente,
         razao_social: normalizeText(cliente.razao_social) || '',
-        documento: normalizeDigits(cliente.documento),
-        telefone_principal: normalizeDigits(cliente.telefone_principal),
-        whatsapp: normalizeDigits(cliente.whatsapp),
-        grupo_whatsapp: cliente.grupo_whatsapp,
-        email_principal: normalizeEmail(cliente.email_principal),
-        cep: normalizeDigits(cliente.cep),
-        nome_fantasia: normalizeText(cliente.nome_fantasia),
-        apelido_relacionamento: normalizeText(cliente.apelido_relacionamento),
-        logradouro: normalizeText(cliente.logradouro),
-        numero: normalizeText(cliente.numero),
-        complemento: normalizeText(cliente.complemento),
-        bairro: normalizeText(cliente.bairro),
-        municipio: normalizeText(cliente.municipio),
-        uf: normalizeText(cliente.uf),
-        pais: normalizeText(cliente.pais),
-        observacoes: normalizeText(cliente.observacoes),
-        observacoes_extras: normalizeText(cliente.observacoes_extras),
-        // Novos campos
-        nome_grupo: normalizeText(cliente.nome_grupo),
+        tipo_cliente: cliente.tipo_cliente || 'PJ',
         status: cliente.status || 'ATIVO',
-        tipo_relacionamento: normalizeText(cliente.tipo_relacionamento),
-        ins_estadual: normalizeDigits(cliente.ins_estadual),
-        emp_redes: normalizeText(cliente.emp_redes),
-        data_fundacao: cliente.data_fundacao && cliente.data_fundacao.trim() !== '' ? cliente.data_fundacao : null,
-        emp_site: cliente.emp_site,
-        ins_municipal: normalizeDigits(cliente.ins_municipal),
-        grupo_economico_id: cliente.grupo_economico_id || null,
-        updated_at: new Date().toISOString(),
       }
+
+      // Adicionar campos opcionais apenas se tiverem valor
+      if (cliente.documento) normalized.documento = normalizeDigits(cliente.documento)
+      if (cliente.nome_fantasia) normalized.nome_fantasia = normalizeText(cliente.nome_fantasia)
+      if (cliente.apelido_relacionamento) normalized.apelido_relacionamento = normalizeText(cliente.apelido_relacionamento)
+      if (cliente.telefone_principal) normalized.telefone_principal = normalizeDigits(cliente.telefone_principal)
+      if (cliente.whatsapp) normalized.whatsapp = normalizeDigits(cliente.whatsapp)
+      if (cliente.grupo_whatsapp) normalized.grupo_whatsapp = cliente.grupo_whatsapp
+      if (cliente.email_principal) normalized.email_principal = normalizeEmail(cliente.email_principal)
+      if (cliente.logradouro) normalized.logradouro = normalizeText(cliente.logradouro)
+      if (cliente.numero) normalized.numero = normalizeText(cliente.numero)
+      if (cliente.complemento) normalized.complemento = normalizeText(cliente.complemento)
+      if (cliente.bairro) normalized.bairro = normalizeText(cliente.bairro)
+      if (cliente.municipio) normalized.municipio = normalizeText(cliente.municipio)
+      if (cliente.uf) normalized.uf = normalizeText(cliente.uf)
+      if (cliente.cep) normalized.cep = normalizeDigits(cliente.cep)
+      if (cliente.pais) normalized.pais = normalizeText(cliente.pais)
+      if (cliente.observacoes) normalized.observacoes = normalizeText(cliente.observacoes)
+      if (cliente.observacoes_extras) normalized.observacoes_extras = normalizeText(cliente.observacoes_extras)
+      if (cliente.tags) normalized.tags = cliente.tags
+      if (cliente.favorito !== undefined) normalized.favorito = cliente.favorito
+      if (cliente.nome_grupo) normalized.nome_grupo = normalizeText(cliente.nome_grupo)
+      if (cliente.ins_estadual) normalized.ins_estadual = normalizeDigits(cliente.ins_estadual)
+      if (cliente.emp_redes) normalized.emp_redes = normalizeText(cliente.emp_redes)
+      if (cliente.data_fundacao && cliente.data_fundacao.trim() !== '') {
+        normalized.data_fundacao = cliente.data_fundacao
+      }
+      if (cliente.emp_site && cliente.emp_site.trim() !== '') {
+        normalized.emp_site = cliente.emp_site
+      }
+      if (cliente.ins_municipal) normalized.ins_municipal = normalizeDigits(cliente.ins_municipal)
+      if (cliente.grupo_economico_id) normalized.grupo_economico_id = cliente.grupo_economico_id
+      
+      // Campos novos - apenas adicionar se existirem
+      if (cliente.origem) normalized.origem = normalizeText(cliente.origem)
+      if (cliente.quem_e) normalized.quem_e = normalizeText(cliente.quem_e)
+      if (cliente.cliente_desde && cliente.cliente_desde.trim() !== '') {
+        normalized.cliente_desde = cliente.cliente_desde
+      }
+
+      normalized.updated_at = new Date().toISOString()
 
       const { data, error } = await supabase
         .from('crm_clientes')
@@ -136,7 +151,10 @@ export function useCreateCliente() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Erro ao inserir cliente:', error)
+        throw error
+      }
       return data
     },
     onSuccess: () => {
@@ -144,7 +162,7 @@ export function useCreateCliente() {
       toast.success('Cliente criado com sucesso')
     },
     onError: (error: any) => {
-      console.error('Erro detalhado:', error)
+      console.error('Erro detalhado ao criar cliente:', error)
       toast.error(`Erro ao criar cliente: ${error?.message || 'Erro desconhecido'}`)
     },
   })
@@ -228,8 +246,9 @@ export function useUpdateCliente() {
       if (data.status !== undefined) {
         normalized.status = data.status
       }
-      if (data.tipo_relacionamento !== undefined) {
-        normalized.tipo_relacionamento = normalizeText(data.tipo_relacionamento)
+      if (data.tipos_relacionamento !== undefined) {
+        // tipos_relacionamento é um array, não normalizar como texto
+        normalized.tipos_relacionamento = data.tipos_relacionamento
       }
       if (data.ins_estadual !== undefined) {
         normalized.ins_estadual = normalizeDigits(data.ins_estadual)
@@ -248,6 +267,9 @@ export function useUpdateCliente() {
       }
       if (data.grupo_economico_id !== undefined) {
         normalized.grupo_economico_id = data.grupo_economico_id
+      }
+      if (data.origem !== undefined) {
+        normalized.origem = normalizeText(data.origem)
       }
       
       // Sempre atualizar o timestamp
