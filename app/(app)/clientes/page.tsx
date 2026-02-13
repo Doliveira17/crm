@@ -86,7 +86,7 @@ export default function ClientesPage() {
           <SearchInput
             value={searchTerm}
             onChange={setSearchTerm}
-            placeholder="Buscar por nome, documento, telefone ou e-mail..."
+            placeholder="Buscar por nome, documento, telefone, e-mail ou grupo WhatsApp..."
           />
         </div>
 

@@ -58,9 +58,13 @@ export function useCreateContato() {
     mutationFn: async (contato: ContatoInsert) => {
       console.log('🔵 useCreateContato - Dados recebidos:', contato)
       
+      // Normalizar canal_relatorio: null se vazio, array caso contrário
+      const canaisRelatorio = Array.isArray(contato.canal_relatorio) && contato.canal_relatorio.length > 0 
+        ? contato.canal_relatorio 
+        : null
+      
       // Calcular autorizacao_mensagem baseado em canal_relatorio
-      const canais = contato.canal_relatorio || []
-      const autorizacao = canais.length > 0
+      const autorizacao = canaisRelatorio !== null && canaisRelatorio.length > 0
 
       const normalized: any = {
         ...contato,
@@ -74,7 +78,7 @@ export function useCreateContato() {
         pessoa_redes: contato.pessoa_redes || null,
         observacoes: normalizeText(contato.observacoes),
         autorizacao_mensagem: autorizacao,
-        canal_relatorio: contato.canal_relatorio || null,
+        canal_relatorio: canaisRelatorio,
         updated_at: new Date().toISOString(),
       }
 
@@ -88,7 +92,7 @@ export function useCreateContato() {
 
       if (error) {
         console.error('🔴 Erro do Supabase:', error)
-        throw error
+        throw new Error(error.message || 'Erro ao criar contato')
       }
       
       console.log('🟢 Contato criado com sucesso:', data)
@@ -98,9 +102,10 @@ export function useCreateContato() {
       queryClient.invalidateQueries({ queryKey: ['contatos'] })
       toast.success('Contato criado com sucesso')
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('🔴 onError capturado:', error)
-      toast.error('Erro ao criar contato')
+      const message = error?.message || 'Erro ao criar contato'
+      toast.error(message)
     },
   })
 }
@@ -110,9 +115,13 @@ export function useUpdateContato() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ContatoUpdate }) => {
+      // Normalizar canal_relatorio: null se vazio, array caso contrário
+      const canaisRelatorio = Array.isArray(data.canal_relatorio) && data.canal_relatorio.length > 0 
+        ? data.canal_relatorio 
+        : null
+      
       // Calcular autorizacao_mensagem baseado em canal_relatorio
-      const canais = data.canal_relatorio || []
-      const autorizacao = canais.length > 0
+      const autorizacao = canaisRelatorio !== null && canaisRelatorio.length > 0
 
       const normalized: any = {
         ...data,
@@ -126,7 +135,7 @@ export function useUpdateContato() {
         pessoa_redes: data.pessoa_redes || null,
         observacoes: normalizeText(data.observacoes),
         autorizacao_mensagem: autorizacao,
-        canal_relatorio: data.canal_relatorio || null,
+        canal_relatorio: canaisRelatorio,
         updated_at: new Date().toISOString(),
       }
 
@@ -137,7 +146,10 @@ export function useUpdateContato() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('🔴 Erro ao atualizar contato:', error)
+        throw new Error(error.message || 'Erro ao atualizar contato')
+      }
       return updated
     },
     onSuccess: (_, variables) => {
@@ -145,9 +157,10 @@ export function useUpdateContato() {
       queryClient.invalidateQueries({ queryKey: ['contato', variables.id] })
       toast.success('Contato atualizado com sucesso')
     },
-    onError: (error) => {
-      toast.error('Erro ao atualizar contato')
-      console.error(error)
+    onError: (error: any) => {
+      console.error('🔴 Erro ao atualizar:', error)
+      const message = error?.message || 'Erro ao atualizar contato'
+      toast.error(message)
     },
   })
 }

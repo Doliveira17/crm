@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.crm_contatos (
   pessoa_site text,
   pessoa_redes jsonb,
   autorizacao_mensagem boolean DEFAULT false,
-  canal_relatorio text[] CHECK (canal_relatorio IS NULL OR (canal_relatorio <@ ARRAY['email', 'whatsapp']::text[] AND array_length(canal_relatorio, 1) > 0)),
+  canal_relatorio text[] CHECK (canal_relatorio IS NULL OR (canal_relatorio <@ ARRAY['email', 'whatsapp', 'grupo_whatsapp']::text[] AND array_length(canal_relatorio, 1) > 0)),
   observacoes text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()

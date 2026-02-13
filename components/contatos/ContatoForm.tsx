@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { phoneMask } from '@/lib/utils/masks'
-import { Save } from 'lucide-react'
+import { Save, Handshake } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ContatoFormProps {
@@ -33,14 +33,21 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
     defaultValues: {
       ...initialData,
       canal_relatorio: initialData?.canal_relatorio ?? null,
+      tipos_relacionamento: initialData?.tipos_relacionamento ?? null,
     },
   })
 
   const [celularValue, setCelularValue] = useState(initialData?.celular || '')
   const [redesSociais, setRedesSociais] = useState(initialData?.pessoa_redes || '')
+  const [tiposRelacionamento, setTiposRelacionamento] = useState<string[]>(initialData?.tipos_relacionamento || [])
 
   // Watch canal_relatorio
   const canalRelatorio = watch('canal_relatorio')
+  
+  // Função para marcar alterações
+  const markAsChanged = () => {
+    setHasChanges(true)
+  }
 
   // Estados para auto-save global
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
@@ -57,7 +64,8 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
   const currentFormData = JSON.stringify({
     ...watchedValues,
     celular: celularValue,
-    pessoa_redes: redesSociais
+    pessoa_redes: redesSociais,
+    tipos_relacionamento: tiposRelacionamento
   })
 
   // Hook para Ctrl+S salvar
@@ -279,8 +287,49 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
                 onChange={(e) => {
                   setRedesSociais(e.target.value)
                   setValue('pessoa_redes', e.target.value)
+                  markAsChanged()
                 }}
               />
+            </div>
+
+            {/* SEÇÃO: TIPOS DE RELACIONAMENTO */}
+            <div className="space-y-3 md:col-span-2">
+              <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Handshake className="h-4 w-4 text-slate-600" />
+                Tipo de Relacionamento
+              </Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {[
+                  'Atendimento Avulso',
+                  'Contrato O&M', 
+                  'Gestão de Creditos',
+                  'O&M com garantia Estendida',
+                  'Sem Atendimento',
+                  'VIP',
+                  'VIP com Contrato O&M'
+                ].map((tipo) => (
+                  <label 
+                    key={tipo}
+                    className={`flex items-center space-x-2 p-2.5 rounded-lg border hover:border-slate-400 hover:bg-slate-50 transition-colors text-xs cursor-pointer bg-white ${tiposRelacionamento.includes(tipo) ? 'border-slate-500 bg-slate-50' : 'border-slate-300'}`}
+                  >
+                    <Checkbox
+                      checked={tiposRelacionamento.includes(tipo)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setTiposRelacionamento([...tiposRelacionamento, tipo])
+                        } else {
+                          setTiposRelacionamento(tiposRelacionamento.filter(t => t !== tipo))
+                        }
+                        setValue('tipos_relacionamento', checked ? [...tiposRelacionamento, tipo] : tiposRelacionamento.filter(t => t !== tipo))
+                        markAsChanged()
+                      }}
+                      id={`tipo-${tipo}`}
+                      className="h-3.5 w-3.5"
+                    />
+                    <span className="leading-tight">{tipo}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -295,15 +344,16 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="canal_email"
-                checked={canalRelatorio?.includes('email')}
+                checked={Array.isArray(canalRelatorio) && canalRelatorio.includes('email')}
                 onCheckedChange={(checked) => {
-                  const current = canalRelatorio || []
+                  const current = Array.isArray(canalRelatorio) ? canalRelatorio : []
                   if (checked) {
-                    setValue('canal_relatorio', [...current.filter(c => c !== 'email'), 'email'])
+                    setValue('canal_relatorio', [...current.filter(c => c !== 'email'), 'email'], { shouldDirty: true })
                   } else {
                     const newValue = current.filter(c => c !== 'email')
-                    setValue('canal_relatorio', newValue.length > 0 ? newValue : null)
+                    setValue('canal_relatorio', newValue.length > 0 ? newValue : null, { shouldDirty: true })
                   }
+                  markAsChanged()
                 }}
               />
               <Label htmlFor="canal_email" className="text-sm font-normal cursor-pointer">
@@ -314,15 +364,16 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="canal_whatsapp"
-                checked={canalRelatorio?.includes('whatsapp')}
+                checked={Array.isArray(canalRelatorio) && canalRelatorio.includes('whatsapp')}
                 onCheckedChange={(checked) => {
-                  const current = canalRelatorio || []
+                  const current = Array.isArray(canalRelatorio) ? canalRelatorio : []
                   if (checked) {
-                    setValue('canal_relatorio', [...current.filter(c => c !== 'whatsapp'), 'whatsapp'])
+                    setValue('canal_relatorio', [...current.filter(c => c !== 'whatsapp'), 'whatsapp'], { shouldDirty: true })
                   } else {
                     const newValue = current.filter(c => c !== 'whatsapp')
-                    setValue('canal_relatorio', newValue.length > 0 ? newValue : null)
+                    setValue('canal_relatorio', newValue.length > 0 ? newValue : null, { shouldDirty: true })
                   }
+                  markAsChanged()
                 }}
               />
               <Label htmlFor="canal_whatsapp" className="text-sm font-normal cursor-pointer">
@@ -333,21 +384,24 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="canal_grupo_whatsapp"
-                checked={canalRelatorio?.includes('grupo_whatsapp')}
+                checked={Array.isArray(canalRelatorio) && canalRelatorio.includes('grupo_whatsapp')}
                 onCheckedChange={(checked) => {
-                  const current = canalRelatorio || []
+                  const current = Array.isArray(canalRelatorio) ? canalRelatorio : []
                   if (checked) {
-                    setValue('canal_relatorio', [...current.filter(c => c !== 'grupo_whatsapp'), 'grupo_whatsapp'])
+                    setValue('canal_relatorio', [...current.filter(c => c !== 'grupo_whatsapp'), 'grupo_whatsapp'], { shouldDirty: true })
                   } else {
                     const newValue = current.filter(c => c !== 'grupo_whatsapp')
-                    setValue('canal_relatorio', newValue.length > 0 ? newValue : null)
+                    setValue('canal_relatorio', newValue.length > 0 ? newValue : null, { shouldDirty: true })
                   }
+                  markAsChanged()
                 }}
               />
               <Label htmlFor="canal_grupo_whatsapp" className="text-sm font-normal cursor-pointer">
                 Receber por Grupo WhatsApp
               </Label>
             </div>
+            
+
           </div>
           {errors.canal_relatorio && (
             <p className="text-sm text-destructive">{errors.canal_relatorio.message}</p>

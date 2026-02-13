@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { phoneMask, documentMask, cepMask } from '@/lib/utils/masks'
 import { TagsSelector } from './TagsSelector'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react'
 import { Building2, User, MapPin, Phone, FileText, Save, Handshake, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -25,6 +25,7 @@ interface ClienteFormProps {
 
 export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
   const router = useRouter()
+  const cepTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   const {
     register,
@@ -41,6 +42,7 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
       ...cliente,
       tipos_relacionamento: cliente?.tipos_relacionamento || [],
     },
+    mode: 'onBlur', // Validar apenas ao sair do campo
   })
 
   const tipoCliente = watch('tipo_cliente')
@@ -54,14 +56,21 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
   const [tiposRelacionamento, setTiposRelacionamento] = useState<string[]>(cliente?.tipos_relacionamento || [])
   const [isRelacionamentoExpanded, setIsRelacionamentoExpanded] = useState(true)
 
-  // Auto-save simples
-  const watchedValues = watch()
+  // Usar useRef para rastrear dados anteriores sem causar re-renders
+  const previousClienteRef = useRef(cliente)
+
+  // Efeito simplificado - apenas atualizar quando cliente mudar
   useEffect(() => {
-    if (cliente) {
-      const hasFormChanges = JSON.stringify(watchedValues) !== JSON.stringify(cliente)
-      setHasChanges(hasFormChanges)
+    if (cliente && cliente !== previousClienteRef.current) {
+      previousClienteRef.current = cliente
+      setDocumentoValue(cliente?.documento || '')
+      setTelefoneValue(cliente?.telefone || '')
+      setWhatsappValue(cliente?.whatsapp || '')
+      setCepValue(cliente?.cep || '')
+      setTags(cliente?.tags || [])
+      setTiposRelacionamento(cliente?.tipos_relacionamento || [])
     }
-  }, [watchedValues, cliente])
+  }, [cliente?.id]) // Depender apenas do ID do cliente
 
   // Sincronizar tiposRelacionamento com o formulário
   useEffect(() => {
@@ -69,8 +78,8 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tiposRelacionamento])
 
-  // Função para buscar CEP
-  const buscarCep = async (cep: string) => {
+  // Memoizar função de busca CEP com debounce
+  const buscarCep = useCallback(async (cep: string) => {
     const cepLimpo = cep.replace(/\D/g, '')
     if (cepLimpo.length === 8) {
       try {
@@ -89,11 +98,38 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
         console.error('Erro ao buscar CEP:', error)
       }
     }
-  }
+  }, [setValue])
 
-  const handleSave = () => {
+  // Debouncer para CEP
+  const handleCepChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = cepMask(e.target.value)
+    setCepValue(masked)
+    setValue('cep', masked)
+    
+    // Limpar timeout anterior
+    if (cepTimeoutRef.current) {
+      clearTimeout(cepTimeoutRef.current)
+    }
+    
+    // Buscar CEP após 500ms de inatividade
+    if (masked.length === 9) {
+      cepTimeoutRef.current = setTimeout(() => {
+        buscarCep(masked)
+      }, 500)
+    }
+  }, [buscarCep, setValue])
+
+  // Limpar timeout ao desmontar
+  useEffect(() => {
+    return () => {
+      if (cepTimeoutRef.current) {
+        clearTimeout(cepTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const handleSave = useCallback(() => {
     const formData = {
-      ...watchedValues,
       documento: documentoValue,
       telefone: telefoneValue,
       whatsapp: whatsappValue,
@@ -101,10 +137,10 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
       tags,
       tipos_relacionamento: tiposRelacionamento.length > 0 ? tiposRelacionamento : null,
     }
-    onSubmit(formData)
-  }
+    onSubmit(formData as any)
+  }, [documentoValue, telefoneValue, whatsappValue, cepValue, tags, tiposRelacionamento, onSubmit])
 
-  const handleFormSubmit = (data: ClienteFormData) => {
+  const handleFormSubmit = useCallback((data: ClienteFormData) => {
     const formData = {
       ...data,
       documento: documentoValue,
@@ -115,7 +151,7 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
       tipos_relacionamento: tiposRelacionamento.length > 0 ? tiposRelacionamento : null,
     }
     onSubmit(formData)
-  }
+  }, [documentoValue, telefoneValue, whatsappValue, cepValue, tags, tiposRelacionamento, onSubmit])
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -416,14 +452,7 @@ export function ClienteForm({ cliente, onSubmit }: ClienteFormProps) {
                   <Input
                     id="cep"
                     value={cepValue}
-                    onChange={(e) => {
-                      const masked = cepMask(e.target.value)
-                      setCepValue(masked)
-                      setValue('cep', masked)
-                      if (masked.length === 9) {
-                        buscarCep(masked)
-                      }
-                    }}
+                    onChange={handleCepChange}
                     placeholder="00000-000"
                     maxLength={9}
                   />

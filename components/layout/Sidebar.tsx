@@ -66,18 +66,18 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      'border-r bg-card transition-all duration-300 relative',
+      'bg-white border-r border-slate-200 transition-all duration-300 relative shadow-sm',
       isCollapsed ? 'w-16' : 'w-64'
     )}>
       <div className={cn(
-        'px-6 py-6 flex items-center',
+        'px-6 py-6 flex items-center border-b border-slate-100',
         isCollapsed ? 'justify-center px-3' : 'justify-between'
       )}>
         {!isCollapsed && (
           <h1 className="flex items-baseline gap-1">
-            <span className="text-xl font-light tracking-tight text-emerald-500">Solar</span>
-            <span className="text-xl font-semibold tracking-tight text-foreground">Energy</span>
-            <span className="ml-1 text-xs font-medium text-muted-foreground">CRM</span>
+            <span className="text-xl font-light tracking-tight text-emerald-600">Solar</span>
+            <span className="text-xl font-semibold tracking-tight text-slate-800">Energy</span>
+            <span className="ml-2 text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-md uppercase tracking-wider">CRM</span>
           </h1>
         )}
         <Button
@@ -85,7 +85,7 @@ export function Sidebar() {
           size="icon"
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn(
-            'h-8 w-8',
+            'h-8 w-8 hover:bg-slate-100 text-slate-400 hover:text-slate-600',
             isCollapsed && 'mx-auto'
           )}
           title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
@@ -97,7 +97,7 @@ export function Sidebar() {
           )}
         </Button>
       </div>
-      <nav className="space-y-1 px-3">
+      <nav className="space-y-1 px-3 py-4">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -107,20 +107,37 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200 group',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                isCollapsed && 'justify-center'
+                  ? 'border border-black text-slate-900 bg-white'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                isCollapsed && 'justify-center px-2'
               )}
               title={isCollapsed ? item.title : undefined}
             >
-              <Icon className="h-5 w-5 flex-shrink-0" />
-              {!isCollapsed && <span>{item.title}</span>}
+              <Icon className={cn(
+                'h-5 w-5 flex-shrink-0 transition-colors',
+                isActive ? 'text-black' : 'text-slate-500 group-hover:text-blue-600'
+              )} />
+              {!isCollapsed && <span className="truncate">{item.title}</span>}
+              {isActive && !isCollapsed && (
+                <div className="ml-auto w-1.5 h-1.5 bg-black rounded-full" />
+              )}
             </Link>
           )
         })}
       </nav>
+      
+      {/* Indicador visual para sidebar colapsada */}
+      {isCollapsed && (
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+          <div className="flex flex-col space-y-1">
+            <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+            <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+            <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

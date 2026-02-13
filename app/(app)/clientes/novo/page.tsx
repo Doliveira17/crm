@@ -60,6 +60,7 @@ export default function NovoClientePage() {
         {/* Coluna Esquerda - Formulário (2/3) */}
         <div className="lg:col-span-2">
           <ClienteForm
+            key={tipoCliente} // Força re-render quando muda o tipo
             initialData={{ tipo_cliente: tipoCliente }}
             onSubmit={handleSubmit}
             onCancel={() => router.push('/clientes')}

@@ -35,18 +35,31 @@ export function useClientesList(searchTerm = '', page = 0, pageSize = 100) {
         
         const gruposIds = grupos?.map(g => g.id) || []
         
-        if (gruposIds.length > 0) {
-          query = query.or(
-            `razao_social.ilike.%${searchTerm}%,nome_fantasia.ilike.%${searchTerm}%,documento.ilike.%${searchTerm}%,telefone_principal.ilike.%${searchTerm}%,email_principal.ilike.%${searchTerm}%,grupo_economico_id.in.(${gruposIds.join(',')})`
-          )
+        // Para busca por #, fazer uma busca especial mais literal
+        if (searchTerm.trim() === '#') {
+          // Buscar apenas em grupo_whatsapp com #
+          query = query.ilike('grupo_whatsapp', '%#%')
         } else {
-          query = query.or(
-            `razao_social.ilike.%${searchTerm}%,nome_fantasia.ilike.%${searchTerm}%,documento.ilike.%${searchTerm}%,telefone_principal.ilike.%${searchTerm}%,email_principal.ilike.%${searchTerm}%`
-          )
+          // Construir query OR de forma mais robusta
+          const conditions: string[] = [
+            `razao_social.ilike.%${searchTerm}%`,
+            `nome_fantasia.ilike.%${searchTerm}%`,
+            `documento.ilike.%${searchTerm}%`,
+            `telefone_principal.ilike.%${searchTerm}%`,
+            `email_principal.ilike.%${searchTerm}%`,
+            `grupo_whatsapp.ilike.%${searchTerm}%`,
+          ]
+          
+          if (gruposIds.length > 0) {
+            conditions.push(`grupo_economico_id.in.(${gruposIds.join(',')})`)
+          }
+          
+          const orCondition = conditions.join(',')
+          query = query.or(orCondition)
         }
       }
 
-      const { data, error, count } = await query
+      const { data, error, count} = await query
 
       if (error) throw error
       
@@ -61,7 +74,10 @@ export function useClientesList(searchTerm = '', page = 0, pageSize = 100) {
         total: count || 0
       }
     },
-    staleTime: 30000, // Cache por 30s
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+    gcTime: 10 * 60 * 1000, // Manter na memória por 10 minutos
+    retry: 1,
+    retryDelay: 1000,
   })
 }
 
@@ -89,6 +105,8 @@ export function useClienteById(id: string) {
       return clienteComGrupo as Cliente
     },
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+    gcTime: 10 * 60 * 1000, // Manter na memória por 10 minutos
   })
 }
 
@@ -111,6 +129,7 @@ export function useCreateCliente() {
       if (cliente.telefone_principal) normalized.telefone_principal = normalizeDigits(cliente.telefone_principal)
       if (cliente.whatsapp) normalized.whatsapp = normalizeDigits(cliente.whatsapp)
       if (cliente.grupo_whatsapp) normalized.grupo_whatsapp = cliente.grupo_whatsapp
+      if (cliente.us_grupo_whatsapp) normalized.us_grupo_whatsapp = cliente.us_grupo_whatsapp
       if (cliente.email_principal) normalized.email_principal = normalizeEmail(cliente.email_principal)
       if (cliente.logradouro) normalized.logradouro = normalizeText(cliente.logradouro)
       if (cliente.numero) normalized.numero = normalizeText(cliente.numero)
@@ -153,7 +172,22 @@ export function useCreateCliente() {
 
       if (error) {
         console.error('Erro ao inserir cliente:', error)
-        throw error
+        
+        // Tratar erro 409 (conflito) especificamente
+        if (error.code === '23505') {
+          // Erro de violação de constraint única
+          let message = 'Já existe um cliente cadastrado com estes dados'
+          
+          if (error.message.includes('documento')) {
+            message = 'Já existe um cliente cadastrado com este CPF/CNPJ'
+          } else if (error.message.includes('email')) {
+            message = 'Já existe um cliente cadastrado com este e-mail'
+          }
+          
+          throw new Error(message)
+        }
+        
+        throw new Error(error.message || 'Erro ao criar cliente')
       }
       return data
     },
@@ -163,7 +197,8 @@ export function useCreateCliente() {
     },
     onError: (error: any) => {
       console.error('Erro detalhado ao criar cliente:', error)
-      toast.error(`Erro ao criar cliente: ${error?.message || 'Erro desconhecido'}`)
+      const message = error?.message || 'Erro desconhecido ao criar cliente'
+      toast.error(message)
     },
   })
 }
@@ -190,6 +225,9 @@ export function useUpdateCliente() {
       }
       if (data.grupo_whatsapp !== undefined) {
         normalized.grupo_whatsapp = data.grupo_whatsapp
+      }
+      if (data.us_grupo_whatsapp !== undefined) {
+        normalized.us_grupo_whatsapp = data.us_grupo_whatsapp
       }
       if (data.email_principal !== undefined) {
         normalized.email_principal = normalizeEmail(data.email_principal)
@@ -270,6 +308,12 @@ export function useUpdateCliente() {
       }
       if (data.origem !== undefined) {
         normalized.origem = normalizeText(data.origem)
+      }
+      if (data.cliente_desde !== undefined) {
+        normalized.cliente_desde = data.cliente_desde && data.cliente_desde.trim() !== '' ? data.cliente_desde : null
+      }
+      if (data.quem_e !== undefined) {
+        normalized.quem_e = normalizeText(data.quem_e)
       }
       
       // Sempre atualizar o timestamp

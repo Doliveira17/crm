@@ -9,6 +9,7 @@ export const clienteSchema = z.object({
   telefone_principal: z.string().nullable().optional(),
   whatsapp: z.string().nullable().optional(),
   grupo_whatsapp: z.string().nullable().optional(),
+  us_grupo_whatsapp: z.string().nullable().optional(),
   email_principal: z.string().email('E-mail inválido').nullable().optional().or(z.literal('')),
   logradouro: z.string().nullable().optional(),
   numero: z.string().nullable().optional(),
