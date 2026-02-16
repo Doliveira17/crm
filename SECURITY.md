@@ -16,9 +16,9 @@
 Os seguintes arquivos contêm informações sensíveis e já estão protegidos pelo `.gitignore`:
 
 - `.env` (todas variações: .env.local, .env.production, etc.)
-- `test-db.js` (contém credenciais hardcoded)
-- `test-fetch.js` (contém credenciais hardcoded)
-- `test-faturas-api.ps1` (contém credenciais hardcoded)
+- Qualquer arquivo com chaves/segredos hardcoded (ex.: `SUPABASE_SERVICE_ROLE_KEY`, JWTs começando com `eyJ...`)
+
+Os scripts de teste foram movidos para `scripts/` e **não** devem conter credenciais hardcoded.
 
 ## 🛡️ Verificação Antes do Commit
 
@@ -50,7 +50,12 @@ git push origin main
 
 Se você commitou credenciais por engano:
 
-1. **Remova do histórico:**
+1. **Remova do histórico (recomendado: git-filter-repo):**
+   ```bash
+   git filter-repo --path test-db.js --invert-paths
+   ```
+
+   Alternativa (legado): `git filter-branch`:
    ```bash
    git filter-branch --force --index-filter \
      "git rm --cached --ignore-unmatch test-db.js" \

@@ -1,6 +1,6 @@
 'use client'
 
-import { Tabs, TabsContent, TabsLis } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ReactNode, useState, useMemo } from 'react'
 
 interface LazyTabsProps {

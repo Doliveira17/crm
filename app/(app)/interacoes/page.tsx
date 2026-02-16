@@ -395,7 +395,7 @@ export default function InteracoesPage() {
                             <div className="flex-1">
                               <p className="text-sm font-semibold text-blue-500 mb-1">Pergunta 1</p>
                               <p className="text-xs text-muted-foreground mb-2 italic">
-                                "Você gostou do relatório e do vídeo?"
+                                Você gostou do relatório e do vídeo?
                               </p>
                               <div className="p-3 rounded-lg bg-background/50 border border-blue-500/20">
                                 <p className="text-sm font-medium text-foreground">{interacao.resposta1}</p>
@@ -414,7 +414,7 @@ export default function InteracoesPage() {
                             <div className="flex-1">
                               <p className="text-sm font-semibold text-indigo-500 mb-1">Pergunta 2</p>
                               <p className="text-xs text-muted-foreground mb-2 italic">
-                                "Gostaria de ter inteligência artificial no seu negócio?"
+                                Gostaria de ter inteligência artificial no seu negócio?
                               </p>
                               <div className="p-3 rounded-lg bg-background/50 border border-indigo-500/20">
                                 <p className="text-sm font-medium text-foreground">{interacao.resposta2}</p>

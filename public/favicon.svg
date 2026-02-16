@@ -1,0 +1,44 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="solarGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="solarGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD60A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFC300;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="solarGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0EA5E9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="solarGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fundo escuro -->
+  <rect width="32" height="32" fill="#0f172a" rx="6"/>
+  
+  <!-- Painel Solar - 4 células com cores vibrantes -->
+  <!-- Célula Superior Esquerda - Laranja/Vermelho -->
+  <rect x="4" y="4" width="12" height="12" rx="2" fill="url(#solarGrad1)"/>
+  
+  <!-- Célula Superior Direita - Amarelo/Ouro -->
+  <rect x="16" y="4" width="12" height="12" rx="2" fill="url(#solarGrad2)"/>
+  
+  <!-- Célula Inferior Esquerda - Azul -->
+  <rect x="4" y="16" width="12" height="12" rx="2" fill="url(#solarGrad3)"/>
+  
+  <!-- Célula Inferior Direita - Verde -->
+  <rect x="16" y="16" width="12" height="12" rx="2" fill="url(#solarGrad4)"/>
+  
+  <!-- Linhas de divisão do painel -->
+  <line x1="16" y1="4" x2="16" y2="28" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+  <line x1="4" y1="16" x2="28" y2="16" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+  
+  <!-- Efeito de brilho/energia no centro -->
+  <circle cx="16" cy="16" r="2" fill="#ffffff" opacity="0.8"/>
+  <circle cx="16" cy="16" r="3.5" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.4"/>
+</svg>

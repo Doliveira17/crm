@@ -57,17 +57,19 @@ export default function ContatosPage() {
 
     setLoadingUnlinked(true)
     try {
-      // Buscar todos os contatos
-      const { data: allContatos, error: contatosError } = await supabase
-        .from('crm_contatos')
-        .select('id')
+	      // Buscar todos os contatos
+	      const { data: allContatos, error: contatosError } = await supabase
+	        .from('crm_contatos')
+	        .select('id')
+	        .returns<Array<{ id: string }>>()
 
       if (contatosError) throw contatosError
 
-      // Buscar todos os vínculos
-      const { data: vinculos, error: vinculosError } = await supabase
-        .from('crm_clientes_contatos')
-        .select('contato_id')
+	      // Buscar todos os vínculos
+	      const { data: vinculos, error: vinculosError } = await supabase
+	        .from('crm_clientes_contatos')
+	        .select('contato_id')
+	        .returns<Array<{ contato_id: string }>>()
 
       if (vinculosError) throw vinculosError
 

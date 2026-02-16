@@ -5,6 +5,7 @@ Sistema web moderno e performático para gestão de clientes (PF e PJ), contatos
 ## ?? Tecnologias
 
 - **Next.js 14+** com App Router
+- **Next.js (App Router)**
 - **TypeScript**
 - **Tailwind CSS**
 - **shadcn/ui** + lucide-react

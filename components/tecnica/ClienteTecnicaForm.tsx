@@ -10,13 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useState, useEffect } from 'react'
-import { Wrench, Save, Clock, Zap, Sun, Wifi } from 'lucide-react'
+import { Wrench, Save, Clock, Zap, Sun, Wifi, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 interface ClienteTecnicaFormProps {
   tecnica?: any
   initialData?: any
+  clienteId?: string
   onSubmit: (data: ClienteTecnicaFormData) => void | Promise<void>
   onCancel?: () => void
   loading?: boolean
@@ -24,7 +25,16 @@ interface ClienteTecnicaFormProps {
   clienteNome?: string
 }
 
-export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, loading, isClienteBlocked = false, clienteNome }: ClienteTecnicaFormProps) {
+export function ClienteTecnicaForm({
+  tecnica,
+  initialData,
+  clienteId,
+  onSubmit,
+  onCancel,
+  loading,
+  isClienteBlocked = false,
+  clienteNome,
+}: ClienteTecnicaFormProps) {
   const router = useRouter()
   const tecnicaData = initialData || tecnica
 
@@ -351,15 +361,30 @@ export function ClienteTecnicaForm({ tecnica, initialData, onSubmit, onCancel, l
 
         {/* Botões de ação */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6 border-t bg-white">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel ? onCancel : () => router.push('/tecnica')}
-            className="w-full sm:w-auto order-2 sm:order-1"
-            size="lg"
-          >
-            Cancelar
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto order-2 sm:order-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel ? onCancel : () => router.push('/tecnica')}
+              className="w-full sm:w-auto"
+              size="lg"
+            >
+              Cancelar
+            </Button>
+
+            {clienteId && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(`/clientes/${clienteId}`)}
+                className="w-full sm:w-auto"
+                size="lg"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar ao Cliente
+              </Button>
+            )}
+          </div>
 
           <Button
             type="submit"

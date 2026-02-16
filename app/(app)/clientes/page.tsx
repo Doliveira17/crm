@@ -24,7 +24,7 @@ import { Separator } from '@/components/ui/separator'
 import { 
   Plus, Users, Star, Save, ChevronLeft, ChevronRight, AlertCircle, 
   Filter, MoreHorizontal, Eye, Edit, Phone, Mail, Calendar, 
-  TrendingUp, UserCheck, Building2, Download, Grid3X3, List,
+  TrendingUp, UserCheck, Building2, Grid3X3, List,
   BarChart3, Activity, Crown, ShieldAlert, User, X, Settings2, 
   Tag, Building, Heart, Clock
 } from 'lucide-react'
@@ -84,12 +84,12 @@ export default function ClientesPage() {
   }
 
   // Filtrar clientes com base nos filtros avançados
-  const filteredClientes = clientes.filter(cliente => {
-    // Filtro por status
-    if (filters.status.length > 0 && !filters.status.includes(cliente.status)) return false
-    
-    // Filtro por tipo
-    if (filters.tipo.length > 0 && !filters.tipo.includes(cliente.tipo_cliente || '')) return false
+	  const filteredClientes = clientes.filter(cliente => {
+	    // Filtro por status
+	    if (filters.status.length > 0 && !filters.status.includes(cliente.status || '')) return false
+	    
+	    // Filtro por tipo
+	    if (filters.tipo.length > 0 && !filters.tipo.includes(cliente.tipo_cliente || '')) return false
     
     // Filtro por favorito
     if (filters.favorito !== null && cliente.favorito !== filters.favorito) return false
@@ -99,15 +99,16 @@ export default function ClientesPage() {
     if (filters.temTags === false && cliente.tags && cliente.tags.length > 0) return false
     
     // Filtro por grupo econômico
-    if (filters.temGrupoEconomico === true && !(cliente as any).grupo_economico_nome) return false
-    if (filters.temGrupoEconomico === false && (cliente as any).grupo_economico_nome) return false
-    
-    // Filtro por WhatsApp
-    if (filters.temWhatsapp === true && !cliente.grupo_whatsapp) return false
-    if (filters.temWhatsapp === false && cliente.grupo_whatsapp) return false
-    
-    return true
-  })
+	    if (filters.temGrupoEconomico === true && !(cliente as any).grupo_economico_nome) return false
+	    if (filters.temGrupoEconomico === false && (cliente as any).grupo_economico_nome) return false
+	    
+	    // Filtro por WhatsApp
+	    const grupoWhatsapp = (cliente as any).grupo_whatsapp as string | null | undefined
+	    if (filters.temWhatsapp === true && !grupoWhatsapp) return false
+	    if (filters.temWhatsapp === false && grupoWhatsapp) return false
+	    
+	    return true
+	  })
 
   // Verificar se há filtros ativos
   const hasActiveFilters = 
@@ -150,17 +151,17 @@ export default function ClientesPage() {
     }))
   }
 
-  // Função para obter cor do status (tons sobrios)
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ATIVO': return 'bg-gray-100 text-gray-700 border-gray-300'
-      case 'INATIVO': return 'bg-gray-50 text-gray-600 border-gray-200'
-      case 'PROSPECTO': return 'bg-slate-100 text-slate-700 border-slate-300'
-      case 'SUSPENSO': return 'bg-stone-100 text-stone-700 border-stone-300'
-      case 'BLOQUEADO': return 'bg-red-50 text-red-700 border-red-200'
-      default: return 'bg-gray-50 text-gray-600 border-gray-200'
-    }
-  }
+	  // Função para obter cor do status (tons sobrios)
+	  const getStatusColor = (status: string | null) => {
+	    switch (status || '') {
+	      case 'ATIVO': return 'bg-gray-100 text-gray-700 border-gray-300'
+	      case 'INATIVO': return 'bg-gray-50 text-gray-600 border-gray-200'
+	      case 'PROSPECTO': return 'bg-slate-100 text-slate-700 border-slate-300'
+	      case 'SUSPENSO': return 'bg-stone-100 text-stone-700 border-stone-300'
+	      case 'BLOQUEADO': return 'bg-red-50 text-red-700 border-red-200'
+	      default: return 'bg-gray-50 text-gray-600 border-gray-200'
+	    }
+	  }
 
   return (
     <div className="space-y-6">
@@ -181,14 +182,6 @@ export default function ClientesPage() {
           >
             <Save className="mr-2 h-4 w-4" />
             Auto-save {autoSaveEnabled ? 'ON' : 'OFF'}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {/* Exportar CSV */}}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Exportar
           </Button>
           <Link href="/clientes/novo">
             <Button className="bg-black hover:bg-gray-800 text-white">

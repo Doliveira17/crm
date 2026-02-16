@@ -177,16 +177,25 @@ export function useDeleteTag() {
 }
 
 export function useClientesByTag(tagName: string | null) {
+  type ClienteByTagRow = {
+    id: string
+    razao_social: string
+    tipo_cliente: string | null
+    documento: string | null
+    tags: string[] | null
+  }
+
   return useQuery({
     queryKey: ['clientes-by-tag', tagName],
     queryFn: async () => {
-      if (!tagName) return []
+      if (!tagName) return [] as ClienteByTagRow[]
 
       const { data, error } = await supabase
         .from('crm_clientes')
         .select('id, razao_social, tipo_cliente, documento, tags')
         .contains('tags', [tagName])
         .order('razao_social')
+        .returns<ClienteByTagRow[]>()
 
       if (error) throw error
       return data || []

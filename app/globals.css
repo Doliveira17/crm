@@ -124,6 +124,73 @@
   }
 }
 
+@layer utilities {
+  .dark .bg-white {
+    @apply bg-card;
+  }
+
+  .dark .bg-slate-50,
+  .dark .bg-slate-50\/50,
+  .dark .bg-slate-100,
+  .dark .bg-gray-50,
+  .dark .bg-gray-100 {
+    @apply bg-muted;
+  }
+
+  .dark .text-black,
+  .dark .text-slate-900,
+  .dark .text-slate-800,
+  .dark .text-slate-700,
+  .dark .text-gray-900,
+  .dark .text-gray-800,
+  .dark .text-gray-700,
+  .dark .text-stone-700 {
+    @apply text-foreground;
+  }
+
+  .dark .text-slate-600,
+  .dark .text-slate-500,
+  .dark .text-slate-400,
+  .dark .text-gray-600,
+  .dark .text-gray-500,
+  .dark .text-gray-400 {
+    @apply text-muted-foreground;
+  }
+
+  .dark .border-slate-100,
+  .dark .border-slate-200,
+  .dark .border-slate-300,
+  .dark .border-slate-400,
+  .dark .border-slate-500,
+  .dark .border-gray-200,
+  .dark .border-gray-300,
+  .dark .border-gray-400,
+  .dark .border-gray-600 {
+    @apply border-border;
+  }
+
+  .dark .hover\:bg-slate-50:hover,
+  .dark .hover\:bg-slate-100:hover,
+  .dark .hover\:bg-gray-50:hover,
+  .dark .hover\:bg-gray-100:hover {
+    @apply bg-accent;
+  }
+
+  .dark .hover\:text-slate-900:hover,
+  .dark .hover\:text-slate-700:hover,
+  .dark .hover\:text-gray-700:hover {
+    @apply text-foreground;
+  }
+
+  .dark .bg-black {
+    background-color: oklch(0.32 0 0);
+  }
+
+  .dark .hover\:bg-gray-800:hover {
+    background-color: oklch(0.38 0 0);
+  }
+}
+
 /* Custom Scrollbar for TV Dashboard */
 .custom-scrollbar::-webkit-scrollbar {
   width: 10px;
@@ -232,4 +299,90 @@
 .glass-card:hover {
   background: rgba(255, 255, 255, 0.25);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.dark .glass-modal {
+  background: rgba(20, 20, 24, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dark .glass-modal::before {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+}
+
+.dark .glass-header {
+  background: rgba(28, 28, 34, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass-icon {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dark .glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(28, 28, 34, 0.65) 0%,
+    rgba(24, 24, 30, 0.55) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.dark .glass-card:hover {
+  background: rgba(32, 32, 40, 0.72);
+}
+/* Logo Animation Professional */
+@keyframes logo-pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes badge-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(15, 23, 42, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(15, 23, 42, 0);
+  }
+}
+
+.logo-container:hover {
+  animation: logo-pulse 0.6s ease-in-out;
+}
+
+.logo-badge:hover {
+  animation: badge-glow 0.6s ease-out;
+}
+
+/* Collapse Button Animation */
+@keyframes chevron-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.collapse-btn:active {
+  animation: chevron-rotate 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }

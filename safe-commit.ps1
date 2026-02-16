@@ -5,9 +5,6 @@ Write-Host "🔒 Verificando arquivos sensíveis..." -ForegroundColor Cyan
 
 # Verifica se arquivos sensíveis estão sendo commitados
 $sensiveFiles = @(
-    "test-db.js",
-    "test-fetch.js",
-    "test-faturas-api.ps1",
     ".env",
     ".env.local",
     ".env.production"
@@ -26,6 +23,28 @@ foreach ($file in $filesToCheck) {
 if ($foundSensitive) {
     Write-Host "❌ Commit bloqueado! Remova os arquivos sensíveis primeiro." -ForegroundColor Red
     Write-Host "Execute: git reset HEAD <arquivo>" -ForegroundColor Yellow
+    exit 1
+}
+
+# Verifica padrões de segredos no diff staged
+$diff = git diff --cached
+$secretPatterns = @(
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "service_role",
+    "eyJhbGci", # JWTs
+    "BEGIN PRIVATE KEY"
+)
+
+$foundSecretsInDiff = $false
+foreach ($pattern in $secretPatterns) {
+    if ($diff -match $pattern) {
+        Write-Host "⚠️  ALERTA: Possível segredo no commit (padrão: $pattern)" -ForegroundColor Red
+        $foundSecretsInDiff = $true
+    }
+}
+
+if ($foundSecretsInDiff) {
+    Write-Host "❌ Commit bloqueado! Remova/rotacione segredos antes de commitar." -ForegroundColor Red
     exit 1
 }
 

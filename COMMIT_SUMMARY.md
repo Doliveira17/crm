@@ -36,9 +36,7 @@
 
 ### Arquivos que NÃO foram commitados
 - `.env*` (todas as variações)
-- `test-db.js` (contém credenciais hardcoded)
-- `test-fetch.js` (contém credenciais hardcoded)
-- `test-faturas-api.ps1` (contém credenciais hardcoded)
+- Scripts de teste ficam em `scripts/` e não devem conter credenciais hardcoded
 
 ## 📦 Dependências Adicionadas
 - @radix-ui/react-checkbox

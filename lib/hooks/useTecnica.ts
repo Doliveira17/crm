@@ -24,7 +24,7 @@ export function useTecnica() {
         if (clientesError) throw clientesError
 
         // Buscar todos os dados técnicos
-        // @ts-ignore
+        // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
         const { data: tecnicaData, error: tecnicaError } = await supabase
           .from('crm_clientes_tecnica')
           .select('*')
@@ -76,7 +76,7 @@ export function useTecnica() {
   // Buscar técnica por ID
   const getTecnicaById = async (id: string) => {
     try {
-      // @ts-ignore - tabela crm_clientes_tecnica ainda não está nos tipos gerados
+      // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data, error: err } = await supabase
         .from('crm_clientes_tecnica')
         .select('*')
@@ -94,7 +94,7 @@ export function useTecnica() {
   // Buscar técnica por documento
   const getTecnicaByDocumento = async (documento: string) => {
     try {
-      // @ts-ignore - tabela crm_clientes_tecnica ainda não está nos tipos gerados
+      // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data, error: err } = await supabase
         .from('crm_clientes_tecnica')
         .select('*')
@@ -112,7 +112,7 @@ export function useTecnica() {
   // Criar técnica
   const createTecnica = async (formData: ClienteTecnicaFormData) => {
     try {
-      // @ts-ignore - tabela crm_clientes_tecnica ainda não está nos tipos gerados
+      // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data: newData, error: err } = await supabase
         .from('crm_clientes_tecnica')
         .insert(formData)
@@ -133,7 +133,7 @@ export function useTecnica() {
   // Atualizar técnica
   const updateTecnica = async (id: string, formData: Partial<ClienteTecnicaFormData>) => {
     try {
-      // @ts-ignore - tabela crm_clientes_tecnica ainda não está nos tipos gerados
+      // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data: updatedData, error: err } = await supabase
         .from('crm_clientes_tecnica')
         .update(formData)

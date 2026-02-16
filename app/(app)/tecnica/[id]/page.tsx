@@ -139,6 +139,7 @@ export default function TecnicaDetailPage() {
         <ClienteTecnicaForm
           tecnica={initialData}
           initialData={initialData}
+          clienteId={clienteId}
           onSubmit={handleSubmit}
           onCancel={() => router.push('/tecnica')}
           isClienteBlocked={isClienteBlocked}

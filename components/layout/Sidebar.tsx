@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { LayoutDashboard, Users, FileText, MessageSquare, Tag, Zap, ChevronLeft, ChevronRight, Wrench } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 const navItems = [
   {
@@ -49,6 +50,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const { user } = useAuth()
 
   useEffect(() => {
     setMounted(true)
@@ -64,36 +66,44 @@ export function Sidebar() {
     }
   }, [isCollapsed, mounted])
 
+  const getUserName = () => {
+    if (!user || !user.email) return 'Usuário'
+    const emailName = user.email.split('@')[0]
+    return emailName || 'Usuário'
+  }
+
   return (
     <aside className={cn(
-      'bg-white border-r border-slate-200 transition-all duration-300 relative shadow-sm',
+      'relative border-r border-border bg-card shadow-sm transition-all duration-300',
       isCollapsed ? 'w-16' : 'w-64'
     )}>
       <div className={cn(
-        'px-6 py-6 flex items-center border-b border-slate-100',
-        isCollapsed ? 'justify-center px-3' : 'justify-between'
+        'relative flex items-center justify-between gap-3 border-b border-border px-6 py-6',
+        isCollapsed && 'justify-center px-3'
       )}>
         {!isCollapsed && (
-          <h1 className="flex items-baseline gap-1">
-            <span className="text-xl font-light tracking-tight text-emerald-600">Solar</span>
-            <span className="text-xl font-semibold tracking-tight text-slate-800">Energy</span>
-            <span className="ml-2 text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-md uppercase tracking-wider">CRM</span>
-          </h1>
+          <Link href="/dashboard" className="group cursor-pointer flex-1">
+            <div className="flex items-baseline gap-1 transition-all duration-300 group-hover:scale-105 origin-left group-hover:drop-shadow-md logo-container">
+              <span className="text-2xl font-light tracking-tight text-emerald-600 transition-all duration-300 group-hover:text-emerald-700">Solar</span>
+              <span className="text-2xl font-bold tracking-tight text-foreground transition-all duration-300 group-hover:text-foreground">Energy</span>
+              <span className="logo-badge ml-2 rounded-md bg-muted px-2.5 py-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-all duration-300 group-hover:bg-foreground group-hover:text-background group-hover:shadow-md">CRM</span>
+            </div>
+          </Link>
         )}
         <Button
-          variant="ghost"
+          variant="outline"
           size="icon"
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn(
-            'h-8 w-8 hover:bg-slate-100 text-slate-400 hover:text-slate-600',
-            isCollapsed && 'mx-auto'
+            'collapse-btn h-9 w-9 flex-shrink-0 border-border text-muted-foreground transition-all duration-300 hover:border-border hover:bg-accent hover:text-foreground active:scale-95',
+            isCollapsed && 'mx-auto w-10 h-10'
           )}
-          title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          title={isCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
         >
           {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5 transition-transform duration-300" />
           ) : (
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5 transition-transform duration-300" />
           )}
         </Button>
       </div>
@@ -109,19 +119,19 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200 group',
                 isActive
-                  ? 'border border-black text-slate-900 bg-white'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                  ? 'border border-primary/30 bg-accent/60 text-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                 isCollapsed && 'justify-center px-2'
               )}
               title={isCollapsed ? item.title : undefined}
             >
               <Icon className={cn(
                 'h-5 w-5 flex-shrink-0 transition-colors',
-                isActive ? 'text-black' : 'text-slate-500 group-hover:text-blue-600'
+                isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
               )} />
               {!isCollapsed && <span className="truncate">{item.title}</span>}
               {isActive && !isCollapsed && (
-                <div className="ml-auto w-1.5 h-1.5 bg-black rounded-full" />
+                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
               )}
             </Link>
           )
@@ -132,12 +142,35 @@ export function Sidebar() {
       {isCollapsed && (
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
           <div className="flex flex-col space-y-1">
-            <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-            <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-            <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+            <div className="h-1 w-1 rounded-full bg-border"></div>
+            <div className="h-1 w-1 rounded-full bg-border"></div>
+            <div className="h-1 w-1 rounded-full bg-border"></div>
           </div>
         </div>
       )}
+
+      {/* Seção do Usuário */}
+      <div className={cn(
+        'absolute bottom-0 left-0 right-0 border-t border-border bg-muted/40 p-3',
+        isCollapsed && 'px-2'
+      )}>
+        <div className={cn(
+          'flex items-center gap-2',
+          isCollapsed && 'justify-center'
+        )}>
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-slate-600 flex items-center justify-center text-white font-semibold text-xs">
+            {getUserName().charAt(0).toUpperCase()}
+          </div>
+          
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0 text-left">
+              <p className="truncate text-sm font-semibold leading-tight text-foreground">{getUserName()}</p>
+              <p className="truncate text-xs leading-tight text-muted-foreground">Sistema CRM</p>
+            </div>
+          )}
+
+        </div>
+      </div>
     </aside>
   )
 }

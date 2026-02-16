@@ -14,6 +14,7 @@ import {
   Activity,
   Filter
 } from 'lucide-react'
+import Link from 'next/link'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import { supabase } from '@/lib/supabase/client'
@@ -285,7 +286,7 @@ export default function TVDashboardPage() {
       <header className="mb-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           {/* Botão Voltar */}
-          <a
+          <Link
             href="/"
             className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-primary/20 bg-card hover:bg-primary/10 hover:border-primary/40 transition-all shadow-lg hover:shadow-xl group"
             title="Voltar à página inicial"
@@ -293,7 +294,7 @@ export default function TVDashboardPage() {
             <svg className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-          </a>
+          </Link>
           
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/50 animate-pulse">
             <BarChart3 className="h-8 w-8 text-primary-foreground" />

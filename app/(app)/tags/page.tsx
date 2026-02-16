@@ -151,13 +151,13 @@ export default function TagsPage() {
       </div>
 
       {/* Lista de Tags */}
-      {!filteredTags || filteredTags.length === 0 ? (
-        <EmptyState
-          icon={Tag}
-          title={searchQuery ? 'Nenhuma tag encontrada' : 'Nenhuma tag cadastrada'}
-          description={
-            searchQuery
-              ? 'Tente buscar por outro termo'
+	      {!filteredTags || filteredTags.length === 0 ? (
+	        <EmptyState
+	          icon={<Tag className="h-12 w-12" />}
+	          title={searchQuery ? 'Nenhuma tag encontrada' : 'Nenhuma tag cadastrada'}
+	          description={
+	            searchQuery
+	              ? 'Tente buscar por outro termo'
               : 'As tags serão exibidas aqui quando você adicionar tags aos clientes'
           }
         />

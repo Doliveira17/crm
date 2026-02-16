@@ -18,19 +18,25 @@ export function useDebounce<T>(value: T, delay: number = 500): T {
 // Throttle hook para limitar atualizações frequentes
 export function useThrottle<T>(value: T, interval: number = 500): T {
   const [throttledValue, setThrottledValue] = React.useState<T>(value)
-  const lastUpdated = React.useRef<number>(Date.now())
+  const lastUpdated = React.useRef<number>(0)
 
   React.useEffect(() => {
     const now = Date.now()
 
-    if (now >= lastUpdated.current + interval) {
+    if (lastUpdated.current === 0) {
+      lastUpdated.current = now
+    }
+
+    const elapsed = now - lastUpdated.current
+
+    if (elapsed >= interval) {
       lastUpdated.current = now
       setThrottledValue(value)
     } else {
       const timer = setTimeout(() => {
         lastUpdated.current = Date.now()
         setThrottledValue(value)
-      }, interval)
+      }, interval - elapsed)
 
       return () => clearTimeout(timer)
     }
