@@ -59,7 +59,7 @@ export default function InteracoesPage() {
   const fetchInteracoes = async () => {
     setLoading(true)
     try {
-      // Buscar relatórios com joins
+      // Buscar relatórios com joins em uma única query (evita N+1)
       const { data, error } = await (supabase as any)
         .from('relatorio_envios')
         .select(`
@@ -73,44 +73,18 @@ export default function InteracoesPage() {
           resposta2,
           sugestão_cliente,
           Interagiu_em,
-          created_at
+          created_at,
+          cliente:crm_clientes(razao_social, tipo_cliente),
+          contato:crm_contatos(nome_completo, celular, email, cargo)
         `)
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      // Buscar dados dos clientes e contatos
-      const interacoesComDados = await Promise.all(
-        (data || []).map(async (item: any) => {
-          let cliente = null
-          let contato = null
-
-          if (item.cliente_id) {
-            const { data: clienteData } = await supabase
-              .from('crm_clientes')
-              .select('razao_social, tipo_cliente')
-              .eq('id', item.cliente_id)
-              .single()
-            cliente = clienteData
-          }
-
-          if (item.contato_id) {
-            const { data: contatoData } = await supabase
-              .from('crm_contatos')
-              .select('nome_completo, celular, email, cargo')
-              .eq('id', item.contato_id)
-              .single()
-            contato = contatoData
-          }
-
-          return {
-            ...item,
-            sugestao_cliente: item['sugestão_cliente'],
-            cliente,
-            contato,
-          }
-        })
-      )
+      const interacoesComDados = (data || []).map((item: any) => ({
+        ...item,
+        sugestao_cliente: item['sugestão_cliente'] ?? null,
+      }))
 
       setInteracoes(interacoesComDados)
     } catch (error) {

@@ -62,7 +62,9 @@ export async function GET(request: NextRequest) {
         enviado_em,
         created_at,
         cliente_id,
-        contato_id
+        contato_id,
+        cliente:crm_clientes(razao_social),
+        contato:crm_contatos(celular, cargo)
       `)
       .order('created_at', { ascending: false })
 
@@ -98,46 +100,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Buscar dados dos clientes e contatos relacionados
-    const relatoriosComDados = await Promise.all(
-      (relatorios || []).map(async (rel: any) => {
-        let clienteNome = null
-        let contatoCelular = null
-        let contatoCargo = null
-
-        if (rel.cliente_id) {
-          const { data: cliente } = await supabase
-            .from('crm_clientes')
-            .select('razao_social')
-            .eq('id', rel.cliente_id)
-            .single()
-          clienteNome = (cliente as any)?.razao_social || null
-        }
-
-        if (rel.contato_id) {
-          const { data: contato } = await supabase
-            .from('crm_contatos')
-            .select('celular, cargo')
-            .eq('id', rel.contato_id)
-            .single()
-          contatoCelular = (contato as any)?.celular || null
-          contatoCargo = (contato as any)?.cargo || null
-        }
-
-        return {
-          ...rel,
-          cliente_nome: clienteNome,
-          contato_celular: contatoCelular,
-          contato_cargo: contatoCargo,
-        }
-      })
-    )
-
     // Transformar dados para formato do frontend
     // LÓGICA CORRIGIDA:
     // ENVIADO: status_envio === '✅ Enviado'
     // INTERAGIDO: viewed === true E foi enviado primeiro
-    const contatos: Contato[] = relatoriosComDados.map((rel: any) => {
+    const contatos: Contato[] = (relatorios || []).map((rel: any) => {
+      const clienteData = Array.isArray(rel.cliente) ? rel.cliente[0] : rel.cliente
+      const contatoData = Array.isArray(rel.contato) ? rel.contato[0] : rel.contato
+
       const foiEnviado = rel.status_envio === '✅ Enviado'
       const temMarcaInteracao = rel.viewed === true
       // Só conta como interagido se FOI ENVIADO PRIMEIRO
@@ -146,9 +116,9 @@ export async function GET(request: NextRequest) {
       return {
         id: rel.id,
         nome: rel.nome_falado_dono || 'Sem nome',
-        telefone: rel.contato_celular || '-',
-        empresa: rel.cliente_nome,
-        cargo: rel.contato_cargo,
+        telefone: contatoData?.celular || '-',
+        empresa: clienteData?.razao_social || null,
+        cargo: contatoData?.cargo || null,
         viewed: rel.viewed ? 'sim' : null,
         status_envio: rel.status_envio,
         interagido: foiInteragido,

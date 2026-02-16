@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Solar CRM | Inicializando</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --bg-soft: #eef2f6;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --accent: #14b8a6;
+      --shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 10% 8%, #ffffff 0%, rgba(255, 255, 255, 0) 34%),
+        linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--text);
+      padding: 24px;
+    }
+    .card {
+      width: min(620px, 100%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 30px;
+      box-shadow: var(--shadow);
+    }
+    .brand {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 22px;
+      letter-spacing: -0.02em;
+    }
+    .brand .solar {
+      color: var(--accent);
+    }
+    .brand .energy {
+      color: #111827;
+    }
+    .brand .crm {
+      color: #9ca3af;
+      font-weight: 600;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--primary);
+      box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35);
+      animation: pulse 1.6s infinite;
+      flex: 0 0 auto;
+    }
+    h1 {
+      font-size: clamp(28px, 3.2vw, 34px);
+      line-height: 1.15;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    .progress {
+      margin-top: 18px;
+      height: 8px;
+      border-radius: 999px;
+      background: #edf2f7;
+      overflow: hidden;
+      border: 1px solid #e5eaf0;
+    }
+    .progress span {
+      display: block;
+      height: 100%;
+      width: 35%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
+      animation: loading 1.6s ease-in-out infinite;
+      transform: translateX(-120%);
+    }
+    .hint {
+      font-size: 14px;
+      margin-top: 14px;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35); }
+      70% { box-shadow: 0 0 0 14px rgba(37, 99, 235, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+    @keyframes loading {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(360%); }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h2 class="brand">
+      <span class="solar">Solar</span>
+      <span class="energy">Energy</span>
+      <span class="crm">CRM</span>
+    </h2>
+    <div class="row">
+      <span class="dot" aria-hidden="true"></span>
+      <h1>Sistema inicializando</h1>
+    </div>
+    <p>O Solar CRM esta subindo os servicos. Esta pagina sai automaticamente quando a aplicacao estiver pronta.</p>
+    <div class="progress" aria-hidden="true"><span></span></div>
+    <p class="hint">Se demorar muito, atualize em alguns segundos.</p>
+  </main>
+</body>
+</html>

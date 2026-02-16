@@ -248,6 +248,187 @@
   -webkit-backdrop-filter: blur(5px);
 }
 
+.login-shell {
+  background:
+    radial-gradient(900px 500px at 15% 8%, rgba(20, 184, 166, 0.14), transparent 62%),
+    radial-gradient(900px 520px at 85% 94%, rgba(37, 99, 235, 0.16), transparent 62%),
+    linear-gradient(180deg, #fafcfe 0%, #f3f6fb 100%);
+}
+
+.login-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(56px);
+  pointer-events: none;
+}
+
+.login-orb--teal {
+  width: 360px;
+  height: 360px;
+  top: 8%;
+  left: -80px;
+  background: radial-gradient(circle at 35% 35%, rgba(20, 184, 166, 0.16), rgba(20, 184, 166, 0.02));
+}
+
+.login-orb--blue {
+  width: 420px;
+  height: 420px;
+  right: -100px;
+  bottom: -120px;
+  background: radial-gradient(circle at 35% 35%, rgba(37, 99, 235, 0.16), rgba(37, 99, 235, 0.02));
+}
+
+.login-glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.58) 55%,
+    rgba(255, 255, 255, 0.68) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow:
+    0 22px 44px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -12px 24px rgba(255, 255, 255, 0.28);
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.login-glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.2) 45%,
+    rgba(255, 255, 255, 0.42) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-glass-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+  filter: url("#login-glass-distortion");
+  pointer-events: none;
+  opacity: 0.2;
+  z-index: -1;
+  isolation: isolate;
+}
+
+.login-glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dark .login-shell {
+  background:
+    radial-gradient(900px 500px at 15% 8%, rgba(20, 184, 166, 0.14), transparent 62%),
+    radial-gradient(900px 520px at 85% 94%, rgba(37, 99, 235, 0.16), transparent 62%),
+    linear-gradient(180deg, #fafcfe 0%, #f3f6fb 100%);
+}
+
+.dark .login-glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.58) 55%,
+    rgba(255, 255, 255, 0.68) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow:
+    0 22px 44px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -12px 24px rgba(255, 255, 255, 0.28);
+}
+
+.login-input {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.84) 0%,
+    rgba(255, 255, 255, 0.64) 100%
+  );
+  border-color: rgba(148, 163, 184, 0.36);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.dark .login-input {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.84) 0%,
+    rgba(255, 255, 255, 0.64) 100%
+  );
+  border-color: rgba(148, 163, 184, 0.36);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+/* Keep login aesthetics equal in dark mode */
+.login-shell,
+.dark .login-shell {
+  color-scheme: light;
+  background:
+    radial-gradient(900px 500px at 15% 8%, rgba(20, 184, 166, 0.14), transparent 62%),
+    radial-gradient(900px 520px at 85% 94%, rgba(37, 99, 235, 0.16), transparent 62%),
+    linear-gradient(180deg, #fafcfe 0%, #f3f6fb 100%) !important;
+}
+
+.login-glass-card,
+.dark .login-glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.58) 55%,
+    rgba(255, 255, 255, 0.68) 100%
+  ) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  box-shadow:
+    0 22px 44px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -12px 24px rgba(255, 255, 255, 0.28) !important;
+}
+
+.login-input,
+.dark .login-input {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.84) 0%,
+    rgba(255, 255, 255, 0.64) 100%
+  ) !important;
+  border-color: rgba(148, 163, 184, 0.36) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 4px 12px rgba(15, 23, 42, 0.05) !important;
+}
+
+.login-text-primary {
+  color: #0f172a !important;
+}
+
+.login-text-secondary {
+  color: #334155 !important;
+}
+
+.login-text-muted {
+  color: #64748b !important;
+}
+
 /* Custom Scrollbar for Glass Modal */
 .glass-scroll::-webkit-scrollbar {
   width: 8px;

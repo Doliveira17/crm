@@ -363,7 +363,7 @@ export default function TagsPage() {
         description={`Tem certeza que deseja excluir a tag "${deletingTag}"? Esta ação irá remover a tag de todos os clientes que a utilizam.`}
         onConfirm={handleDeleteTag}
         confirmText={deleteTagMutation.isPending ? 'Excluindo...' : 'Excluir'}
-        confirmVariant="destructive"
+        variant="destructive"
         disabled={deleteTagMutation.isPending}
       />
     </div>

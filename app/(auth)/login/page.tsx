@@ -36,47 +36,110 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data: authData } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Erro de autenticação:', {
+          status: error.status,
+          message: error.message,
+          name: error.name,
+        })
+        throw error
+      }
+
+      // Registrar login na tabela de histórico (se a tabela existir)
+      if (authData.user?.id) {
+        try {
+          const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+          await (supabase as any).from('user_login_history').insert({
+            user_id: authData.user.id,
+            user_email: data.email,
+            user_agent: userAgent,
+          })
+        } catch (logError: any) {
+          // Não bloquear o login se a tabela não existir
+          if (logError?.message?.includes('does not exist')) {
+            console.warn('Tabela user_login_history não encontrada. Execute o SQL de migração.')
+          } else {
+            console.error('Erro ao registrar login em histórico:', logError)
+          }
+        }
+      }
 
       toast.success('Login realizado com sucesso')
-      router.push('/dashboard')
+      // O redirecionamento será feito pelo AuthLayout via onAuthStateChange
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao fazer login')
-      console.error(error)
+      const errorMessage = error.message || 'Erro ao fazer login'
+      
+      // Mensagens mais específicas
+      if (errorMessage.includes('Invalid login credentials')) {
+        toast.error('E-mail ou senha incorretos. Verifique suas credenciais.')
+      } else if (errorMessage.includes('User not found')) {
+        toast.error('Usuário não encontrado. Crie uma conta no painel do Supabase.')
+      } else if (errorMessage.includes('Email not confirmed')) {
+        toast.error('E-mail não confirmado. Verifique sua caixa de entrada.')
+      } else {
+        toast.error(errorMessage)
+      }
+      
+      console.error('Erro de autenticação detalhado:', error)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-lg border border-gray-200 dark:border-gray-800">
-        <CardHeader className="space-y-3">
+    <div className="login-shell relative flex min-h-screen items-center justify-center overflow-hidden p-6">
+      <svg
+        className="absolute h-0 w-0"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <defs>
+          <filter id="login-glass-distortion" x="0%" y="0%" width="100%" height="100%">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.008 0.008"
+              numOctaves={2}
+              seed={92}
+              result="noise"
+            />
+            <feGaussianBlur in="noise" stdDeviation="1.5" result="blurred" />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="blurred"
+              scale={10}
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+      </svg>
+
+      <div className="login-orb login-orb--teal" />
+      <div className="login-orb login-orb--blue" />
+
+      <Card className="login-glass-card relative z-10 w-full max-w-xl !bg-transparent border border-white/60 shadow-none">
+        <CardHeader className="space-y-4 px-8 pt-8">
           <div className="space-y-2">
-            <CardTitle className="text-3xl font-bold">
+            <CardTitle className="text-4xl font-bold tracking-tight">
               <span className="text-teal-500">Solar</span>
-              <span className="text-gray-900 dark:text-white"> Energy</span>
-              <span className="text-gray-400 dark:text-gray-500"> CRM</span>
+              <span className="login-text-primary"> Energy</span>
+              <span className="login-text-muted"> CRM</span>
             </CardTitle>
-            <CardDescription className="text-base text-gray-600 dark:text-gray-400">
+            <CardDescription className="login-text-secondary text-lg">
               Entre com suas credenciais para acessar o sistema
             </CardDescription>
           </div>
         </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Campo E-mail */}
+        <CardContent className="px-8 pb-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2.5">
-              <Label 
-                htmlFor="email" 
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+              <Label htmlFor="email" className="login-text-secondary text-sm font-semibold">
                 E-mail
               </Label>
               <Input
@@ -84,10 +147,10 @@ export default function LoginPage() {
                 type="email"
                 placeholder="seu@email.com"
                 disabled={loading}
-                className={`h-10 transition-all duration-200 ${
+                className={`login-input h-12 rounded-xl pr-3 transition-all duration-200 ${
                   errors.email 
                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                    : 'border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
+                    : 'border-slate-300/70 focus:border-blue-500 focus:ring-blue-500/20'
                 }`}
                 {...register('email')}
               />
@@ -96,12 +159,8 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Campo Senha */}
             <div className="space-y-2.5">
-              <Label 
-                htmlFor="password" 
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+              <Label htmlFor="password" className="login-text-secondary text-sm font-semibold">
                 Senha
               </Label>
               <div className="relative">
@@ -110,10 +169,10 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   disabled={loading}
-                  className={`h-10 pr-10 transition-all duration-200 ${
+                  className={`login-input h-12 rounded-xl pr-10 transition-all duration-200 ${
                     errors.password 
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
+                      : 'border-slate-300/70 focus:border-blue-500 focus:ring-blue-500/20'
                   }`}
                   {...register('password')}
                 />
@@ -121,7 +180,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-700 disabled:opacity-50"
                   title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 >
                   {showPassword ? (
@@ -136,10 +195,9 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Botão de Login */}
             <Button 
               type="submit" 
-              className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
               disabled={loading}
             >
               {loading ? (
@@ -152,9 +210,8 @@ export default function LoginPage() {
               )}
             </Button>
 
-            {/* Info adicional */}
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+            <div className="border-t border-slate-200/70 pt-2">
+              <p className="login-text-muted text-center text-xs">
                 Sistema seguro com autenticação Supabase
               </p>
             </div>

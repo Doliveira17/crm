@@ -110,7 +110,7 @@ export function ClienteContactsPanel({
         cargo: null,
         email: null,
         observacoes: null
-      })
+      }) as { id: string } | null
 
       // Vincular o contato recém-criado
       if (novoContato?.id) {
@@ -414,7 +414,7 @@ export function ClienteContactsPanel({
                 console.log('=== INICIANDO CRIAÇÃO DE CONTATO ===')
                 console.log('Dados do formulário:', JSON.stringify(data, null, 2))
                 
-                const novoContato = await createContato.mutateAsync(data)
+                const novoContato = await createContato.mutateAsync(data) as { id: string } | null
                 console.log('✅ Contato criado com sucesso:', novoContato)
                 
                 if (novoContato?.id) {

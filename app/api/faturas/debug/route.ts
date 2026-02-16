@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/lib/supabase/database.types'
 
+type ViewFaturasDebugRow = {
+  UC_Final: string | null
+  cliente_cadastro: string | null
+  cliente_fatura: string | null
+  injetado: number | string | null
+  status: string | null
+  mes_referente: string | null
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -25,6 +34,7 @@ export async function GET(request: NextRequest) {
       .from('view_faturas_completa')
       .select('*')
       .limit(10)
+      .returns<ViewFaturasDebugRow[]>()
 
     if (amostraError) {
       return NextResponse.json({
@@ -36,6 +46,7 @@ export async function GET(request: NextRequest) {
     const { data: stats, error: statsError } = await supabase
       .from('view_faturas_completa')
       .select('UC_Final, cliente_cadastro, cliente_fatura, injetado')
+      .returns<ViewFaturasDebugRow[]>()
 
     if (statsError) {
       return NextResponse.json({

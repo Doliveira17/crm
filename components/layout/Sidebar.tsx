@@ -3,46 +3,76 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, FileText, MessageSquare, Tag, Zap, ChevronLeft, ChevronRight, Wrench } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, MessageSquare, Tag, Zap, ChevronLeft, ChevronRight, Wrench, KeyRound } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/hooks/useAuth'
 
-const navItems = [
+type NavItem = {
+  title: string
+  href: string
+  icon: LucideIcon
+  permissionKey?: string
+  roles: Array<'admin' | 'limitada'>
+}
+
+const navItems: NavItem[] = [
   {
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+    permissionKey: 'dashboard',
+    roles: ['admin', 'limitada'],
   },
   {
     title: 'Clientes',
     href: '/clientes',
     icon: Users,
+    permissionKey: 'clientes',
+    roles: ['admin', 'limitada'],
   },
   {
     title: 'Dados Técnicos',
     href: '/tecnica',
     icon: Wrench,
+    permissionKey: 'tecnica',
+    roles: ['admin', 'limitada'],
   },
   {
     title: 'Interações',
     href: '/interacoes',
     icon: MessageSquare,
+    permissionKey: 'interacoes',
+    roles: ['admin', 'limitada'],
   },
   {
     title: 'Tags',
     href: '/tags',
     icon: Tag,
+    permissionKey: 'tags',
+    roles: ['admin', 'limitada'],
   },
   {
     title: 'Faturas',
     href: '/faturas',
     icon: Zap,
+    permissionKey: 'faturas',
+    roles: ['admin', 'limitada'],
   },
   {
     title: 'Relatórios',
     href: '/relatorios',
     icon: FileText,
+    permissionKey: 'relatorios',
+    roles: ['admin', 'limitada'],
+  },
+  {
+    title: 'Permissões',
+    href: '/permicoes',
+    icon: KeyRound,
+    permissionKey: 'permicoes',
+    roles: ['admin'],
   },
 ]
 
@@ -50,7 +80,23 @@ export function Sidebar() {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const { user } = useAuth()
+  const { user, role, permissions } = useAuth()
+  
+  // Filtrar itens baseado em role e permissões
+  const visibleNavItems = navItems.filter((item) => {
+    // Se não tem a role necessária, não mostra
+    if (!item.roles.includes(role)) return false
+    
+    // Se é admin, mostra tudo que tem permissão de role
+    if (role === 'admin') return true
+    
+    // Se é limitada, verificar permissões individuais
+    if (role === 'limitada' && item.permissionKey) {
+      return permissions[item.permissionKey] === true
+    }
+    
+    return false
+  })
 
   useEffect(() => {
     setMounted(true)
@@ -108,7 +154,7 @@ export function Sidebar() {
         </Button>
       </div>
       <nav className="space-y-1 px-3 py-4">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           

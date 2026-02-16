@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:3001": "next dev -p 3001",
+    "fallback:proxy": "node scripts/fallback-proxy.cjs",
     "build": "next build",
     "start": "next start",
+    "start:3001": "next start -p 3001",
     "lint": "eslint app components lib --ext .ts,.tsx"
   },
   "dependencies": {

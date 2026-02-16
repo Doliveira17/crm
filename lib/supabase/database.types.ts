@@ -106,6 +106,7 @@ export interface Database {
           ins_municipal?: string | null
           grupo_economico_id?: string | null
         }
+        Relationships: []
       }
       crm_contatos: {
         Row: {
@@ -156,6 +157,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       crm_clientes_contatos: {
         Row: {
@@ -185,6 +187,7 @@ export interface Database {
           observacoes_relacionamento?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       relatorio_envios: {
         Row: {
@@ -241,6 +244,7 @@ export interface Database {
           visualizado_em?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       grupos_economicos: {
         Row: {
@@ -264,6 +268,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
     }
     Views: {
@@ -298,6 +303,7 @@ export interface Database {
         Update: {
           [_ in never]: never
         }
+        Relationships: []
       }
     }
     Functions: {

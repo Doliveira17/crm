@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
+import { usePathname, useRouter } from 'next/navigation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppShell } from '@/components/layout/AppShell'
 import { Toaster } from '@/components/ui/sonner'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 export default function AppLayout({
   children,
@@ -13,36 +13,58 @@ export default function AppLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: false,
-        retry: 1,
-        staleTime: 30000, // Cache global de 30s
-      },
-    },
-  }))
+  const pathname = usePathname()
+  const { user, loading, role, roleLoading, permissions } = useAuth()
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+            retry: 1,
+            staleTime: 30000,
+          },
+        },
+      })
+  )
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        router.push('/login')
-      }
+    if (loading || roleLoading) return
+
+    if (!user) {
+      router.replace('/login')
+      return
     }
 
-    checkAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        router.push('/login')
+    //Se for role limitada, verificar permissões
+    if (role === 'limitada') {
+      // Pegar primeira parte da rota (ex: /clientes/123 -> clientes)
+      const routeSegment = pathname.split('/')[1]
+      
+      // Se não tem permissão para essa seção, redirecionar para primeira permitida
+      if (!permissions[routeSegment]) {
+        const firstAllowedRoute = Object.keys(permissions).find(key => permissions[key])
+        if (firstAllowedRoute) {
+          router.replace(`/${firstAllowedRoute}`)
+        } else {
+          // Sem permissões, redirecionar para mensagem de acesso negado
+          router.replace('/sem-acesso')
+        }
       }
-    })
-
-    return () => {
-      subscription.unsubscribe()
     }
-  }, [router])
+  }, [loading, roleLoading, user, role, permissions, pathname, router])
+
+  if (loading || roleLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+        Carregando...
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

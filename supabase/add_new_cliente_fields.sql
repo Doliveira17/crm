@@ -1,4 +1,4 @@
--- Script para adicionar novos campos à tabela crm_clientes
+(-- Script para adicionar novos campos à tabela crm_clientes
 -- Execute este script no seu banco de dados Supabase
 
 -- Adicionar as novas colunas

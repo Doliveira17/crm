@@ -10,6 +10,44 @@ type Cliente = Database['public']['Tables']['crm_clientes']['Row']
 type ClienteInsert = Database['public']['Tables']['crm_clientes']['Insert']
 type ClienteUpdate = Database['public']['Tables']['crm_clientes']['Update']
 
+type ClienteInsertInput = ClienteInsert & {
+  whatsapp?: string | null
+  us_grupo_whatsapp?: string | null
+  grupo_whatsapp?: string | null
+  pais?: string | null
+  nome_grupo?: string | null
+  status?: string | null
+  tipos_relacionamento?: string[] | null
+  ins_estadual?: string | null
+  emp_redes?: string | null
+  data_fundacao?: string | null
+  emp_site?: string | null
+  ins_municipal?: string | null
+  origem?: string | null
+  quem_e?: string | null
+  cliente_desde?: string | null
+  observacoes_extras?: string | null
+}
+
+type ClienteUpdateInput = ClienteUpdate & {
+  whatsapp?: string | null
+  us_grupo_whatsapp?: string | null
+  grupo_whatsapp?: string | null
+  pais?: string | null
+  nome_grupo?: string | null
+  status?: string | null
+  tipos_relacionamento?: string[] | null
+  ins_estadual?: string | null
+  emp_redes?: string | null
+  data_fundacao?: string | null
+  emp_site?: string | null
+  ins_municipal?: string | null
+  origem?: string | null
+  quem_e?: string | null
+  cliente_desde?: string | null
+  observacoes_extras?: string | null
+}
+
 export function useClientesList(searchTerm = '', page = 0, pageSize = 100) {
   return useQuery({
     queryKey: ['clientes', searchTerm, page],
@@ -32,6 +70,7 @@ export function useClientesList(searchTerm = '', page = 0, pageSize = 100) {
           .from('grupos_economicos')
           .select('id')
           .ilike('nome', `%${searchTerm}%`)
+          .returns<Array<{ id: string }>>()
         
         const gruposIds = grupos?.map(g => g.id) || []
         
@@ -93,13 +132,17 @@ export function useClienteById(id: string) {
         `)
         .eq('id', id)
         .single()
+        .returns<Cliente & { grupo_economico?: { nome: string } | null }>()
 
       if (error) throw error
+      if (!data) throw new Error('Cliente não encontrado')
+
+      const clienteData = data as Cliente & { grupo_economico?: { nome: string } | null }
       
       // Adicionar nome do grupo econômico aos dados
       const clienteComGrupo = {
-        ...data,
-        grupo_economico_nome: (data as any).grupo_economico?.nome || null,
+        ...clienteData,
+        grupo_economico_nome: clienteData.grupo_economico?.nome || null,
       }
       
       return clienteComGrupo as Cliente
@@ -114,7 +157,7 @@ export function useCreateCliente() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (cliente: ClienteInsert) => {
+    mutationFn: async (cliente: ClienteInsertInput) => {
       // Construir objeto apenas com campos que existem na tabela
       const normalized: any = {
         razao_social: normalizeText(cliente.razao_social) || '',
@@ -207,7 +250,7 @@ export function useUpdateCliente() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: ClienteUpdate }) => {
+    mutationFn: async ({ id, data }: { id: string; data: ClienteUpdateInput }) => {
       const normalized: any = {}
       
       // Só incluir campos que realmente existem

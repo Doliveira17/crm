@@ -4,6 +4,58 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { ClienteTecnicaFormData } from '@/lib/validators/clienteTecnica'
 
+type TecnicaPayload = Partial<ClienteTecnicaFormData>
+
+const sanitizeTecnicaPayload = (formData: TecnicaPayload): TecnicaPayload => {
+  const payload: Record<string, unknown> = { ...formData }
+
+  const nullableStringFields: Array<keyof ClienteTecnicaFormData> = [
+    'razao_social',
+    'nome_planta',
+    'modalidade',
+    'classificacao',
+    'data_install',
+    'venc_garantia',
+    'garantia_extendida',
+    'tipo_local',
+    'marca_inverter',
+    'mod_inverter',
+    'serie_inverter',
+    'marca_modulos',
+    'mod_modulos',
+  ]
+
+  const nullableNumberFields: Array<keyof ClienteTecnicaFormData> = [
+    'potencia_usina_kwp',
+    'quant_inverter',
+    'quant_modulos',
+  ]
+
+  nullableStringFields.forEach((field) => {
+    const value = payload[field]
+    if (typeof value === 'string') {
+      const trimmedValue = value.trim()
+      payload[field] = trimmedValue === '' ? null : trimmedValue
+    }
+  })
+
+  nullableNumberFields.forEach((field) => {
+    const value = payload[field]
+    if (
+      value === '' ||
+      value === null ||
+      value === undefined ||
+      (typeof value === 'number' && Number.isNaN(value))
+    ) {
+      payload[field] = null
+    }
+  })
+
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined)
+  ) as TecnicaPayload
+}
+
 export function useTecnica() {
   const [data, setData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -29,9 +81,18 @@ export function useTecnica() {
           .from('crm_clientes_tecnica')
           .select('*')
 
+        if (tecnicaError) throw tecnicaError
+
+        const tecnicaByClienteId = new Map<string, any>()
+        ;(tecnicaData || []).forEach((tecnica: any) => {
+          if (tecnica?.cliente_id) {
+            tecnicaByClienteId.set(tecnica.cliente_id, tecnica)
+          }
+        })
+
         // Fazer merge: cada cliente com seus dados técnicos (se existir)
         const merged = clientes?.map((cliente: any) => {
-          const tecnica = tecnicaData?.find((t: any) => t.cliente_id === cliente.id)
+          const tecnica = tecnicaByClienteId.get(cliente.id)
           return {
             id: cliente.id,
             cliente_id: cliente.id,
@@ -112,10 +173,12 @@ export function useTecnica() {
   // Criar técnica
   const createTecnica = async (formData: ClienteTecnicaFormData) => {
     try {
+      const payload = sanitizeTecnicaPayload(formData)
+
       // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data: newData, error: err } = await supabase
         .from('crm_clientes_tecnica')
-        .insert(formData)
+        .insert(payload)
         .select()
         .single()
 
@@ -133,10 +196,12 @@ export function useTecnica() {
   // Atualizar técnica
   const updateTecnica = async (id: string, formData: Partial<ClienteTecnicaFormData>) => {
     try {
+      const payload = sanitizeTecnicaPayload(formData)
+
       // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data: updatedData, error: err } = await supabase
         .from('crm_clientes_tecnica')
-        .update(formData)
+        .update(payload)
         .eq('id', id)
         .select()
         .single()

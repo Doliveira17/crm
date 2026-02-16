@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 
@@ -10,20 +10,23 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        router.push('/dashboard')
+        router.replace('/dashboard')
+      } else {
+        setChecking(false)
       }
     }
 
     checkAuth()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        router.push('/dashboard')
+      if (session && event === 'SIGNED_IN') {
+        router.replace('/dashboard')
       }
     })
 
@@ -31,6 +34,10 @@ export default function AuthLayout({
       subscription.unsubscribe()
     }
   }, [router])
+
+  if (checking) {
+    return null
+  }
 
   return <>{children}</>
 }
