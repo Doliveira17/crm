@@ -1,17 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-// Cliente Supabase com credenciais de serviço (lado do servidor)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-)
+// Função para criar cliente Supabase com credenciais de serviço
+const getSupabaseAdmin = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  )
+}
 
 // Verificar se o usuário é admin
 async function verifyAdmin(authHeader: string | null) {
@@ -21,6 +23,7 @@ async function verifyAdmin(authHeader: string | null) {
     }
 
     const token = authHeader.replace('Bearer ', '')
+    const supabaseAdmin = getSupabaseAdmin()
 
     // Verificar usuário usando JWT diretamente
     const { data, error } = await supabaseAdmin.auth.getUser(token)
@@ -74,6 +77,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Buscar todos os usuários
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: users, error } = await (supabaseAdmin as any)
       .from('user_roles')
       .select('*')
@@ -145,6 +149,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar usuário no Supabase Auth
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: newAuthUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
