@@ -108,8 +108,8 @@ export default function ContatosPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Contatos</h1>
-          <p className="text-muted-foreground">Gerenciar cadastro de contatos</p>
+          <h1 className="text-3xl font-bold">Pessoas</h1>
+          <p className="text-muted-foreground">Gerenciar cadastro de pessoas</p>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -134,7 +134,7 @@ export default function ContatosPage() {
           <Link href="/contatos/novo">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Novo Contato
+              Nova Pessoa
             </Button>
           </Link>
         </div>
@@ -154,13 +154,13 @@ export default function ContatosPage() {
         ) : !displayedContatos || displayedContatos.length === 0 ? (
           <EmptyState
             icon={<UserCircle className="h-12 w-12" />}
-            title="Nenhum contato encontrado"
+            title="Nenhuma pessoa encontrada"
             description={
               searchTerm
                 ? 'Tente ajustar os termos da sua busca'
                 : showUnlinked 
-                  ? 'Todos os contatos estão vinculados a clientes'
-                  : 'Comece criando seu primeiro contato'
+                  ? 'Todas as pessoas estão vinculadas a clientes'
+                  : 'Comece criando sua primeira pessoa'
             }
           />
         ) : (

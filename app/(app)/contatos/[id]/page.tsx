@@ -1,19 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useContatoById, useUpdateContato, useDeleteContato } from '@/lib/hooks/useContatos'
-import { useVinculosByContato } from '@/lib/hooks/useVinculos'
 import { ContatoForm } from '@/components/contatos/ContatoForm'
+import { ClientesVinculadosSection } from '@/components/contatos/ClientesVinculadosSection'
 import { LoadingState } from '@/components/common/LoadingState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Trash2, ShieldAlert } from 'lucide-react'
-import { ContatoFormData } from '@/lib/validators/contato'
+import { Card } from '@/components/ui/card'
+import { ArrowLeft, Trash2, Handshake } from 'lucide-react'
+import { ContatoFormData, PreferenciasClienteData } from '@/lib/validators/contato'
 
 export default function ContatoDetailPage() {
   const params = useParams()
@@ -21,11 +18,18 @@ export default function ContatoDetailPage() {
   const contatoId = params.id as string
 
   const { data: contato, isLoading } = useContatoById(contatoId)
-  const { data: vinculos } = useVinculosByContato(contatoId)
   const updateContato = useUpdateContato()
   const deleteContato = useDeleteContato()
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [clientesVinculados, setClientesVinculados] = useState<PreferenciasClienteData[]>([])
+
+  // Sincronizar clientes vinculados quando contato muda
+  useEffect(() => {
+    if (contato?.clientes_vinculados) {
+      setClientesVinculados(contato.clientes_vinculados)
+    }
+  }, [contato?.clientes_vinculados])
 
   if (isLoading) {
     return <LoadingState />
@@ -36,7 +40,12 @@ export default function ContatoDetailPage() {
   }
 
   const handleUpdate = async (data: ContatoFormData) => {
-    await updateContato.mutateAsync({ id: contatoId, data })
+    // Incluir clientes vinculados com as alterações
+    const dataWithClientes = {
+      ...data,
+      clientes_vinculados: clientesVinculados,
+    }
+    await updateContato.mutateAsync({ id: contatoId, data: dataWithClientes })
   }
 
   const handleDelete = async () => {
@@ -45,8 +54,15 @@ export default function ContatoDetailPage() {
   }
 
   const handleCancel = () => {
-    // Usar router.back() para voltar à página anterior (mais confiável)
     router.back()
+  }
+
+  const handleClienteUpdate = (clienteId: string, data: Partial<PreferenciasClienteData>) => {
+    setClientesVinculados((prev) =>
+      prev.map((cliente) =>
+        cliente.cliente_id === clienteId ? { ...cliente, ...data } : cliente
+      )
+    )
   }
 
   return (
@@ -58,7 +74,7 @@ export default function ContatoDetailPage() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">{contato.nome_completo}</h1>
-            <p className="text-muted-foreground">Editar informações do contato</p>
+            <p className="text-muted-foreground">Editar informações da pessoa</p>
           </div>
         </div>
         <Button
@@ -71,59 +87,42 @@ export default function ContatoDetailPage() {
         </Button>
       </div>
 
-      <ContatoForm
-        initialData={contato as any}
-        onSubmit={handleUpdate}
-        onCancel={handleCancel}
-        loading={updateContato.isPending}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Coluna Esquerda - Formulário (2/3) */}
+        <div className="lg:col-span-2">
+          <ContatoForm
+            initialData={contato as any}
+            onSubmit={handleUpdate}
+            onCancel={handleCancel}
+            loading={updateContato.isPending}
+            hideClientsSection
+          />
+        </div>
 
-      {vinculos && vinculos.length > 0 && (
-        <>
-          <Separator className="my-8" />
-          <Card>
-            <CardHeader>
-              <CardTitle>Clientes Vinculados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {vinculos.map((vinculo: any) => (
-                  <div 
-                    key={vinculo.id} 
-                    className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
-                  >
-                    <Link 
-                      href={`/clientes/${vinculo.cliente_id}`}
-                      className="flex-1 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium hover:text-primary hover:underline">
-                          {vinculo.cliente?.razao_social}
-                        </p>
-                        {vinculo.cliente?.status === 'BLOQUEADO' && (
-                          <Badge variant="destructive" className="text-xs">
-                            BLOQUEADO
-                          </Badge>
-                        )}
-                      </div>
-                      {vinculo.cliente?.tipo_cliente && (
-                        <p className="text-sm text-muted-foreground">
-                          {vinculo.cliente.tipo_cliente === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}
-                        </p>
-                      )}
-                    </Link>
-                    <Link href={`/clientes/${vinculo.cliente_id}`}>
-                      <Button size="sm" variant="outline">
-                        Ver Cliente
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
+        {/* Coluna Direita - Clientes Vinculados (1/3) */}
+        <div className="lg:col-span-1">
+          {clientesVinculados && clientesVinculados.length > 0 ? (
+            <div className="sticky top-6">
+              <ClientesVinculadosSection
+                clientes={clientesVinculados}
+                onUpdate={handleClienteUpdate}
+              />
+            </div>
+          ) : (
+            <Card className="shadow-lg sticky top-6">
+              <div className="p-8 text-center">
+                <Handshake className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Nenhum Cliente Vinculado
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Adicione clientes para este contato na página de clientes.
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
+            </Card>
+          )}
+        </div>
+      </div>
 
       <ConfirmDialog
         open={deleteDialogOpen}

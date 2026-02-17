@@ -406,7 +406,7 @@ export function ClienteContactsPanel({
       <Dialog open={newContactDialogOpen} onOpenChange={setNewContactDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border border-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-slate-900 tracking-tight">Criar e Vincular Novo Contato</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-slate-900 tracking-tight">Criar e Vincular Nova Pessoa</DialogTitle>
           </DialogHeader>
           <ContatoForm
             onSubmit={async (data: ContatoFormData) => {

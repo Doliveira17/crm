@@ -400,12 +400,12 @@ export default function InteracoesPage() {
                         </div>
                       )}
 
-                      {/* Informações do Contato */}
+                      {/* Informações da Pessoa */}
                       {interacao.contato && (
                         <div className="p-4 rounded-xl bg-muted/50 border">
                           <p className="text-sm font-semibold mb-2 flex items-center gap-2">
                             <User className="h-4 w-4" />
-                            Informações do Contato
+                            Informações da Pessoa
                           </p>
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             {interacao.contato.celular && (

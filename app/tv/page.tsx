@@ -738,7 +738,7 @@ export default function TVDashboardPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold text-white truncate">{contato.nome}</p>
-                              <p className="text-xs text-gray-400">Detalhes do Contato</p>
+                              <p className="text-xs text-gray-400">Detalhes da Pessoa</p>
                             </div>
                           </div>
                           

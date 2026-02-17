@@ -39,6 +39,7 @@ export function useContatoById(id: string) {
   return useQuery({
     queryKey: ['contato', id],
     queryFn: async () => {
+      // Buscar dados do contato
       const { data, error } = await supabase
         .from('crm_contatos')
         .select('*')
@@ -46,7 +47,54 @@ export function useContatoById(id: string) {
         .single()
 
       if (error) throw error
-      return data as Contato
+
+      // Buscar clientes vinculados com preferências
+      const { data: vinculos, error: vinculosError } = await supabase
+        .from('crm_clientes_contatos')
+        .select(`
+          cliente_id,
+          contato_principal,
+          cargo_no_cliente,
+          observacoes_relacionamento,
+          email_contato,
+          telefone_contato,
+          website_contato,
+          pref_email,
+          pref_whatsapp,
+          pref_grupo_whatsapp,
+          crm_clientes (
+            razao_social,
+            tipo_cliente,
+            grupo_whatsapp
+          )
+        `)
+        .eq('contato_id', id)
+
+      if (vinculosError) {
+        console.warn('Erro ao buscar vínculos:', vinculosError)
+      }
+
+      // Formatar clientes vinculados
+      const clientes_vinculados = (vinculos || []).map((v: any) => ({
+        cliente_id: v.cliente_id,
+        cliente_nome: v.crm_clientes?.razao_social || '',
+        tipo_cliente: v.crm_clientes?.tipo_cliente || '',
+        grupo_whatsapp: v.crm_clientes?.grupo_whatsapp || null,
+        contato_principal: v.contato_principal || false,
+        cargo_no_cliente: v.cargo_no_cliente,
+        observacoes_relacionamento: v.observacoes_relacionamento,
+        email_contato: v.email_contato,
+        telefone_contato: v.telefone_contato,
+        website_contato: v.website_contato,
+        pref_email: v.pref_email || false,
+        pref_whatsapp: v.pref_whatsapp || false,
+        pref_grupo_whatsapp: v.pref_grupo_whatsapp || false,
+      }))
+
+      return {
+        ...data,
+        clientes_vinculados,
+      } as Contato & { clientes_vinculados: any[] }
     },
     enabled: !!id,
   })
@@ -115,31 +163,35 @@ export function useUpdateContato() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: ContatoUpdate }) => {
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      // Separar clientes_vinculados dos dados principais
+      const { clientes_vinculados, ...contatoData } = data
+      
       // Normalizar canal_relatorio: null se vazio, array caso contrário
-      const canaisRelatorio = Array.isArray(data.canal_relatorio) && data.canal_relatorio.length > 0 
-        ? data.canal_relatorio 
+      const canaisRelatorio = Array.isArray(contatoData.canal_relatorio) && contatoData.canal_relatorio.length > 0 
+        ? contatoData.canal_relatorio 
         : null
       
       // Calcular autorizacao_mensagem baseado em canal_relatorio
       const autorizacao = canaisRelatorio !== null && canaisRelatorio.length > 0
 
       const normalized: any = {
-        ...data,
-        nome_completo: data.nome_completo ? normalizeText(data.nome_completo) || '' : undefined,
-        apelido_relacionamento: normalizeText(data.apelido_relacionamento),
-        cargo: normalizeText(data.cargo),
-        celular: normalizeDigits(data.celular),
-        email: normalizeEmail(data.email),
-        data_aniversario: data.data_aniversario && data.data_aniversario.trim() !== '' ? data.data_aniversario : null,
-        pessoa_site: normalizeText(data.pessoa_site),
-        pessoa_redes: data.pessoa_redes || null,
-        observacoes: normalizeText(data.observacoes),
+        ...contatoData,
+        nome_completo: contatoData.nome_completo ? normalizeText(contatoData.nome_completo) || '' : undefined,
+        apelido_relacionamento: normalizeText(contatoData.apelido_relacionamento),
+        cargo: normalizeText(contatoData.cargo),
+        celular: normalizeDigits(contatoData.celular),
+        email: normalizeEmail(contatoData.email),
+        data_aniversario: contatoData.data_aniversario && contatoData.data_aniversario.trim() !== '' ? contatoData.data_aniversario : null,
+        pessoa_site: normalizeText(contatoData.pessoa_site),
+        pessoa_redes: contatoData.pessoa_redes || null,
+        observacoes: normalizeText(contatoData.observacoes),
         autorizacao_mensagem: autorizacao,
         canal_relatorio: canaisRelatorio,
         updated_at: new Date().toISOString(),
       }
 
+      // Atualizar contato
       const { data: updated, error } = await (supabase as any)
         .from('crm_contatos')
         .update(normalized)
@@ -151,6 +203,39 @@ export function useUpdateContato() {
         console.error('🔴 Erro ao atualizar contato:', error)
         throw new Error(error.message || 'Erro ao atualizar contato')
       }
+
+      // Atualizar preferências dos clientes vinculados
+      if (clientes_vinculados && Array.isArray(clientes_vinculados) && clientes_vinculados.length > 0) {
+        try {
+          // Preparar dados para batch update
+          const updates = clientes_vinculados.map((cliente) => {
+            const { cliente_id, cliente_nome, tipo_cliente, ...preferencias } = cliente
+            return {
+              cliente_id,
+              contato_id: id,
+              ...preferencias,
+            }
+          })
+
+          console.log('🔵 Salvando clientes vinculados:', updates)
+
+          // Fazer upsert em batch
+          const { error: batchError, data: batchData } = await supabase
+            .from('crm_clientes_contatos')
+            .upsert(updates, { onConflict: 'cliente_id,contato_id' })
+
+          if (batchError) {
+            console.error('🔴 Erro ao atualizar preferências em batch:', batchError)
+            throw batchError
+          }
+          
+          console.log('🟢 Clientes vinculados salvos com sucesso:', batchData)
+        } catch (err) {
+          console.error('🔴 Erro no batch update:', err)
+          throw err
+        }
+      }
+
       return updated
     },
     onSuccess: (_, variables) => {
