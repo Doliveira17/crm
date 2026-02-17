@@ -64,10 +64,12 @@ interface UC {
 
 interface ClienteAgrupado {
   cliente: string
+  cpfCnpj: string | null
   totalUCs: number
   ucs: UC[]
   totalInjetado: number
   ucsComProblema: number
+  ucsSemDados: number
   porcentagemProblema: number
 }
 
@@ -146,6 +148,7 @@ export default function FaturasDashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [isLive, setIsLive] = useState(true)
+  const [ucsValidacao, setUcsValidacao] = useState<Map<string, { estado: string | null; historico: any[] }>>(new Map())
 
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos')
@@ -206,6 +209,119 @@ export default function FaturasDashboardPage() {
     }
   }, [])
 
+  // Carregar estados de validação das UCs do banco de dados
+  useEffect(() => {
+    const carregarEstadosUcs = async () => {
+      try {
+        const { data: ucsDb, error } = await (supabase as any)
+          .from('crm_ucs_validacao')
+          .select('documento, uc, estado_de_chamado, historico_validacao')
+
+        if (error) {
+          console.error('Erro ao carregar estados das UCs:', error)
+          return
+        }
+
+        if (ucsDb && ucsDb.length > 0) {
+          const mapa = new Map<string, { estado: string | null; historico: any[] }>()
+          ucsDb.forEach((row: any) => {
+            const chave = `${row.documento}:${row.uc}`
+            mapa.set(chave, {
+              estado: row.estado_de_chamado,
+              historico: (row.historico_validacao as any[]) || []
+            })
+          })
+          setUcsValidacao(mapa)
+          console.log('📋 Estados de UCs carregados:', mapa.size, 'UCs')
+        }
+      } catch (erro) {
+        console.error('Erro ao carregar estados das UCs:', erro)
+      }
+    }
+
+    void carregarEstadosUcs()
+  }, []) // Executar apenas uma vez ao montar
+
+  // Auto-resolver UCs quando injetado volta a ser maior que 0
+  useEffect(() => {
+    const autoResolverUcs = async () => {
+      if (!data?.clientesAgrupados) return
+
+      // Procurar UCs em validação que agora estão OK
+      const ucsParaResolver: Array<{ 
+        documento: string
+        uc: string
+        chaveUc: string
+        historicoAtual: any[]
+      }> = []
+
+      data.clientesAgrupados.forEach(cliente => {
+        if (!cliente.cpfCnpj) return
+        const documentoNormalizado = cliente.cpfCnpj.replace(/[.\-\/]/g, '')
+
+        cliente.ucs.forEach(uc => {
+          const chaveUc = `${documentoNormalizado}:${uc.uc}`
+          const validacao = ucsValidacao.get(chaveUc)
+
+          // Se está em "Validando" mas agora o injetado > 0, resolver para Verde
+          if (validacao?.estado === 'Validando' && uc.status === 'ok') {
+            ucsParaResolver.push({
+              documento: documentoNormalizado,
+              uc: uc.uc,
+              chaveUc,
+              historicoAtual: validacao.historico || []
+            })
+          }
+        })
+      })
+
+      // Atualizar UCs resolvidas para "Verde"
+      for (const ucResolving of ucsParaResolver) {
+        const agora = new Date()
+        const dia = String(agora.getDate()).padStart(2, '0')
+        const mes = String(agora.getMonth() + 1).padStart(2, '0')
+        const ano = agora.getFullYear()
+        const dataFormatada = `${dia}/${mes}/${ano}`
+
+        const novoHistorico = [
+          ...ucResolving.historicoAtual,
+          {
+            estado: 'Verde',
+            data: dataFormatada,
+            timestamp: new Date().toISOString()
+          }
+        ]
+
+        // Atualizar no banco
+        const { error } = await (supabase as any)
+          .from('crm_ucs_validacao')
+          .update({
+            estado_de_chamado: 'Verde',
+            historico_validacao: novoHistorico
+          })
+          .eq('documento', ucResolving.documento)
+          .eq('uc', ucResolving.uc)
+
+        if (!error) {
+          // Atualizar estado local
+          setUcsValidacao(prev => {
+            const novoMapa = new Map(prev)
+            novoMapa.set(ucResolving.chaveUc, {
+              estado: 'Verde',
+              historico: novoHistorico
+            })
+            return novoMapa
+          })
+          console.log(`✅ UC ${ucResolving.uc} auto-resolvida para Verde`)
+        } else {
+          console.error('❌ Erro ao resolver UC:', error)
+        }
+      }
+    }
+
+    void autoResolverUcs()
+  }, [data?.clientesAgrupados, ucsValidacao])
+
   useEffect(() => {
     void fetchData()
 
@@ -227,6 +343,77 @@ export default function FaturasDashboardPage() {
     setIsLive((prev) => !prev)
     if (!isLive) {
       void fetchData()
+    }
+  }
+
+  // Marcar UC como "Validando" quando clicar em UC vermelha
+  const marcarUcComoValidando = async (cpfCnpj: string | null, uc: UC) => {
+    if (!cpfCnpj) {
+      console.warn('❌ Sem CPF/CNPJ')
+      return
+    }
+
+    const documentoNormalizado = cpfCnpj.replace(/[.\-\/]/g, '')
+    const chaveUc = `${documentoNormalizado}:${uc.uc}`
+
+    try {
+      console.log(`⏳ Marcando UC ${uc.uc} como Validando...`)
+
+      // Formatar data como DD/MM/YYYY
+      const agora = new Date()
+      const dia = String(agora.getDate()).padStart(2, '0')
+      const mes = String(agora.getMonth() + 1).padStart(2, '0')
+      const ano = agora.getFullYear()
+      const dataFormatada = `${dia}/${mes}/${ano}`
+
+      // Adicionar ao histórico
+      const validacaoAtual = ucsValidacao.get(chaveUc)
+      const historicoAtual = validacaoAtual?.historico || []
+      const novoHistorico = [
+        ...historicoAtual,
+        {
+          estado: 'Validando',
+          data: dataFormatada,
+          timestamp: new Date().toISOString()
+        }
+      ]
+
+      // ✅ ATUALIZAR ESTADO LOCAL IMEDIATAMENTE
+      setUcsValidacao(prev => {
+        const novoMapa = new Map(prev)
+        novoMapa.set(chaveUc, {
+          estado: 'Validando',
+          historico: novoHistorico
+        })
+        return novoMapa
+      })
+
+      // Atualizar ou inserir no banco
+      const { data, error } = await (supabase as any)
+        .from('crm_ucs_validacao')
+        .upsert({
+          documento: documentoNormalizado,
+          uc: uc.uc,
+          estado_de_chamado: 'Validando',
+          historico_validacao: novoHistorico
+        })
+
+      if (error) {
+        console.error('❌ Erro ao atualizar UC no banco:', error)
+        console.error('❌ Detalhes do erro:', error.message, error.code)
+        return
+      }
+
+      console.log(`✅ UC ${uc.uc} marcada como Validando em ${dataFormatada}`)
+      console.log('✅ Dados salvos no banco:', { documento: documentoNormalizado, uc: uc.uc, estado: 'Validando' })
+      
+      // Forçar refresh em background
+      setTimeout(() => {
+        void fetchData(true)
+      }, 300)
+      
+    } catch (erro) {
+      console.error('❌ Erro ao marcar UC:', erro)
     }
   }
 
@@ -274,7 +461,7 @@ export default function FaturasDashboardPage() {
     })
   }, [data?.clientesAgrupados])
 
-  // UCs com problemas para a sidebar
+  // UCs com problemas para a sidebar (excluindo UCs em validação)
   const ucsComProblemas = useMemo(() => {
     const clientes = data?.clientesAgrupados ?? []
     const problemas: Array<{ uc: string; cliente: string; injetado: number | null }> = []
@@ -282,17 +469,35 @@ export default function FaturasDashboardPage() {
     clientes.forEach((cliente) => {
       cliente.ucs.forEach((uc) => {
         if (uc.status === 'injetado_zerado') {
-          problemas.push({
-            uc: uc.uc,
-            cliente: cliente.cliente,
-            injetado: uc.injetado
-          })
+          // Normalizar documento igual ao salvamento no banco (sem pontuação)
+          const documentoNormalizado = (cliente.cpfCnpj || cliente.cliente).replace(/[.\-\/]/g, '')
+          const chaveUc = `${documentoNormalizado}:${uc.uc}`
+          const estadoUc = ucsValidacao.get(chaveUc)
+          // Só adiciona como problema se NÃO estiver em validação
+          if (!estadoUc || estadoUc.estado !== 'Validando') {
+            problemas.push({
+              uc: uc.uc,
+              cliente: cliente.cliente,
+              injetado: uc.injetado
+            })
+          }
         }
       })
     })
     
     return problemas
-  }, [data?.clientesAgrupados])
+  }, [data?.clientesAgrupados, ucsValidacao])
+
+  // Contar UCs em validação para o card "Validando"
+  const ucsValidandoContagem = useMemo(() => {
+    let total = 0
+    ucsValidacao.forEach((validacao) => {
+      if (validacao.estado === 'Validando') {
+        total++
+      }
+    })
+    return total
+  }, [ucsValidacao])
 
   const filteredClientes = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -540,7 +745,7 @@ export default function FaturasDashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
         <Card className="border border-blue-200 dark:border-blue-900/50 hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -586,6 +791,21 @@ export default function FaturasDashboardPage() {
           </CardContent>
         </Card>
 
+        <Card className="border border-amber-200 dark:border-amber-900/50 hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <div className="p-1.5 rounded-md bg-amber-500/10">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <span className="text-muted-foreground font-medium">Validando</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 pb-3">
+            <div className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{ucsValidandoContagem}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">Sendo investigadas</p>
+          </CardContent>
+        </Card>
+
         <Card className="border border-red-200 dark:border-red-900/50 hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -597,7 +817,7 @@ export default function FaturasDashboardPage() {
           </CardHeader>
           <CardContent className="pt-0 pb-3">
             <div className="text-2xl font-bold tabular-nums text-red-600 dark:text-red-400">
-              {metricas?.ucsInjetadoZero ?? 0}
+              {ucsComProblemas.length}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">Sem dados: {metricas?.ucsSemDados ?? 0}</p>
           </CardContent>
@@ -812,12 +1032,28 @@ export default function FaturasDashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 auto-rows-max">
             {paginationData.clientesPaginados.map((cliente, index) => {
               const taxa = cliente.totalUCs > 0 ? (cliente.ucsComProblema / cliente.totalUCs) * 100 : 0
-              const statusIcon =
-                cliente.ucsComProblema > 0
-                  ? 'bg-red-500'
+              const temProblema = cliente.ucsComProblema > 0
+              
+              // Contar UCs em validação para este cliente
+              const ucsValidandoCliente = cliente.ucs.filter(uc => {
+                const chaveUc = `${cliente.cpfCnpj?.replace(/[.\-\/]/g, '')}:${uc.uc}`
+                return ucsValidacao.get(chaveUc)?.estado === 'Validando'
+              }).length
+
+              const ucsValidadoCliente = cliente.ucs.filter(uc => {
+                const chaveUc = `${cliente.cpfCnpj?.replace(/[.\-\/]/g, '')}:${uc.uc}`
+                return ucsValidacao.get(chaveUc)?.estado === 'Verde'
+              }).length
+              
+              // Definir cor do ícone de status
+              const statusIcon = ucsValidandoCliente > 0
+                ? 'bg-amber-500'  // Amarelo quando tem UCs em validação
+                : temProblema
+                  ? 'bg-red-500'   // Vermelho quando tem problema
                   : cliente.ucsSemDados > 0
-                    ? 'bg-gray-500'
-                    : 'bg-emerald-500'
+                    ? 'bg-gray-500' // Cinza quando sem dados
+                    : 'bg-emerald-500' // Verde quando OK
+              
               const isExpanded = expandedClientes.has(cliente.cliente)
               // Criar chave única usando o nome do cliente que já é único após deduplicação
               const uniqueKey = cliente.cliente
@@ -875,7 +1111,19 @@ export default function FaturasDashboardPage() {
                         </div>
                       </div>
                       <div className="flex gap-1.5 flex-shrink-0 items-start">
-                        {cliente.ucsComProblema === 0 && cliente.ucsSemDados === 0 ? (
+                        {ucsValidandoCliente > 0 && (
+                          <Badge className="bg-amber-500 text-white gap-1 px-2.5 py-1">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            {isExpanded ? <span>{ucsValidandoCliente} validando</span> : <span>{ucsValidandoCliente}</span>}
+                          </Badge>
+                        )}
+                        {ucsValidadoCliente > 0 && ucsValidandoCliente === 0 && (
+                          <Badge className="bg-emerald-600 text-white gap-1 px-2.5 py-1">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {isExpanded ? <span>{ucsValidadoCliente} OK</span> : <span>{ucsValidadoCliente}</span>}
+                          </Badge>
+                        )}
+                        {cliente.ucsComProblema === 0 && cliente.ucsSemDados === 0 && ucsValidandoCliente === 0 && ucsValidadoCliente === 0 ? (
                           <Badge className="bg-emerald-600 text-white gap-1 px-2.5 py-1">
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             {isExpanded && <span>OK</span>}
@@ -910,26 +1158,38 @@ export default function FaturasDashboardPage() {
                       ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2.5">
                         {cliente.ucs.map((uc, ucIndex) => {
+                          const chaveUc = `${cliente.cpfCnpj?.replace(/[.\-\/]/g, '')}:${uc.uc}` 
+                          const validacao = ucsValidacao.get(chaveUc)
+                          const estadoUc = validacao?.estado || null // null (vermelho), 'Validando' (amarelo), 'Verde' (verde)
+
                           return (
                             <div
                               key={`${uc.uc}-${ucIndex}`}
-                              onClick={() => setUcDialog({ cliente: cliente.cliente, uc })}
+                              onClick={() => {
+                                // Se vermelho, marcar como validando com single click
+                                if (uc.status === 'injetado_zerado' && !estadoUc) {
+                                  void marcarUcComoValidando(cliente.cpfCnpj, uc)
+                                } else {
+                                  // Senão, abrir diálogo
+                                  setUcDialog({ cliente: cliente.cliente, uc })
+                                }
+                              }}
                               className={cn(
                                 'group relative p-3 rounded-lg border-2 cursor-pointer transition-all duration-200',
                                 'hover:shadow-lg hover:scale-105 active:scale-95',
                                 'flex flex-col gap-2',
-                                uc.status === 'ok' &&
-                                  'bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20',
-                                uc.status === 'ok' &&
-                                  'border-emerald-300 dark:border-emerald-700 hover:border-emerald-500',
-                                uc.status === 'injetado_zerado' &&
-                                  'bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20',
-                                uc.status === 'injetado_zerado' &&
-                                  'border-red-300 dark:border-red-700 hover:border-red-500',
-                                uc.status === 'sem_dados' &&
-                                  'bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900/30 dark:to-gray-800/20',
-                                uc.status === 'sem_dados' &&
-                                  'border-gray-300 dark:border-gray-700 hover:border-gray-500'
+                                // Estados baseados em validacao + status
+                                estadoUc === 'Validando' && 'bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20',
+                                estadoUc === 'Validando' && 'border-amber-400 dark:border-amber-600 hover:border-amber-500',
+                                estadoUc === 'Verde' && 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20',
+                                estadoUc === 'Verde' && 'border-emerald-400 dark:border-emerald-600 hover:border-emerald-500',
+                                // Se não tem validacao, usar status original
+                                !estadoUc && uc.status === 'ok' && 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20',
+                                !estadoUc && uc.status === 'ok' && 'border-emerald-300 dark:border-emerald-700 hover:border-emerald-500',
+                                !estadoUc && uc.status === 'injetado_zerado' && 'bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20',
+                                !estadoUc && uc.status === 'injetado_zerado' && 'border-red-300 dark:border-red-700 hover:border-red-500',
+                                !estadoUc && uc.status === 'sem_dados' && 'bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900/30 dark:to-gray-800/20',
+                                !estadoUc && uc.status === 'sem_dados' && 'border-gray-300 dark:border-gray-700 hover:border-gray-500'
                               )}
                             >
                               {/* UC Number */}
@@ -945,9 +1205,11 @@ export default function FaturasDashboardPage() {
                                 {/* Status Indicator */}
                                 <div className={cn(
                                   'w-2 h-2 rounded-full flex-shrink-0',
-                                  uc.status === 'ok' && 'bg-emerald-500',
-                                  uc.status === 'injetado_zerado' && 'bg-red-500',
-                                  uc.status === 'sem_dados' && 'bg-gray-400'
+                                  estadoUc === 'Validando' && 'bg-amber-500',
+                                  estadoUc === 'Verde' && 'bg-emerald-500',
+                                  !estadoUc && uc.status === 'ok' && 'bg-emerald-500',
+                                  !estadoUc && uc.status === 'injetado_zerado' && 'bg-red-500',
+                                  !estadoUc && uc.status === 'sem_dados' && 'bg-gray-400'
                                 )} />
                               </div>
 
@@ -972,12 +1234,14 @@ export default function FaturasDashboardPage() {
                               <Badge
                                 className={cn(
                                   'rounded-md text-[10px] font-semibold w-full justify-center py-1 border-0',
-                                  uc.status === 'ok' && 'bg-emerald-600 text-white',
-                                  uc.status === 'injetado_zerado' && 'bg-red-600 text-white',
-                                  uc.status === 'sem_dados' && 'bg-gray-500 text-white'
+                                  estadoUc === 'Validando' && 'bg-amber-600 text-white',
+                                  estadoUc === 'Verde' && 'bg-emerald-600 text-white',
+                                  !estadoUc && uc.status === 'ok' && 'bg-emerald-600 text-white',
+                                  !estadoUc && uc.status === 'injetado_zerado' && 'bg-red-600 text-white',
+                                  !estadoUc && uc.status === 'sem_dados' && 'bg-gray-500 text-white'
                                 )}
                               >
-                                {uc.status === 'ok' ? 'OK' : uc.status === 'injetado_zerado' ? 'Zero' : 'N/D'}
+                                {estadoUc === 'Validando' ? '🔍 Validando' : estadoUc === 'Verde' ? '✅ OK' : uc.status === 'ok' ? 'OK' : uc.status === 'injetado_zerado' ? 'Zero' : 'N/D'}
                               </Badge>
                             </div>
                           )

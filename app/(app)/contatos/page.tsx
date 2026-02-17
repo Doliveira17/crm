@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useContatosList } from '@/lib/hooks/useContatos'
+import { useDebounce } from '@/lib/hooks/useDebounce'
 import { SearchInput } from '@/components/common/SearchInput'
 import { EmptyState } from '@/components/common/EmptyState'
 import { LoadingState } from '@/components/common/LoadingState'
@@ -26,10 +27,11 @@ import { supabase } from '@/lib/supabase/client'
 export default function ContatosPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 400)
   const [showUnlinked, setShowUnlinked] = useState(false)
   const [unlinkedContatosIds, setUnlinkedContatosIds] = useState<Set<string>>(new Set())
   const [loadingUnlinked, setLoadingUnlinked] = useState(false)
-  const { data: contatos, isLoading } = useContatosList(searchTerm)
+  const { data: contatos, isLoading } = useContatosList(debouncedSearch)
   
   // Estado do auto-save global
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {

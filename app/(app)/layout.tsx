@@ -21,8 +21,13 @@ export default function AppLayout({
         defaultOptions: {
           queries: {
             refetchOnWindowFocus: false,
-            retry: 1,
-            staleTime: 30000,
+            refetchOnReconnect: false,
+            retry: (failureCount, error: any) => {
+              if (error?.status === 401 || error?.status === 403) return false
+              return failureCount < 2
+            },
+            staleTime: 5 * 60 * 1000,  // 5 minutos - dados permanecem fresh
+            gcTime: 10 * 60 * 1000,     // 10 minutos - manter na memória
           },
         },
       })

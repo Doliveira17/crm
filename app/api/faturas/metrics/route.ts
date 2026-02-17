@@ -21,6 +21,7 @@ type BaseRow = {
 
 interface ClienteAgrupado {
   cliente: string
+  cpfCnpj: string | null
   totalUCs: number
   ucs: Array<{
     uc: string
@@ -133,37 +134,72 @@ function getInjetadoInfoFromDadosExtraidos(payload: unknown): {
     return { injetado: null, status: 'sem_dados' }
   }
 
-  // Prioridade: injetado_fora_ponta > injetado_ponta > injetado
-  let injetadoFoaPonta =
-    json['injetado_fora_ponta'] ??
-    json['injetado fora ponta'] ??
-    null
+  // 🎯 Busca flexível que procura em múltiplos níveis
+  const findFieldValue = (fieldVariants: string[]): number | null => {
+    // Normalizar a busca
+    const searchTerms = fieldVariants.map(v => v.toLowerCase().replace(/[\s_-]+/g, ''))
+    
+    // NÍVEL ROOT: Procurar no JSON direto
+    for (const [key, value] of Object.entries(json)) {
+      const keyNorm = key.toLowerCase().replace(/[\s_-]+/g, '')
+      if (searchTerms.includes(keyNorm) && value !== null && value !== undefined) {
+        return parseNumber(value)
+      }
+    }
 
-  let injetadoPonta =
-    json['injetado_ponta'] ??
-    json['injetado ponta'] ??
-    null
+    // NÍVEL ANINHADO: Procurar dentro de objetos conhecidos
+    const nestedObjects = ['leitura_medidor', 'dados_leitura', 'medicao', 'medidor']
+    for (const nestedKey of nestedObjects) {
+      const nestedObj = json[nestedKey]
+      if (nestedObj && typeof nestedObj === 'object' && !Array.isArray(nestedObj)) {
+        for (const [key, value] of Object.entries(nestedObj)) {
+          const keyNorm = key.toLowerCase().replace(/[\s_-]+/g, '')
+          if (searchTerms.includes(keyNorm) && value !== null && value !== undefined) {
+            return parseNumber(value)
+          }
+        }
+      }
+    }
 
-  // Parse dos valores
-  const forapontaNum = injetadoFoaPonta !== null ? parseNumber(injetadoFoaPonta) : 0
-  const pontaNum = injetadoPonta !== null ? parseNumber(injetadoPonta) : 0
-
-  // Se fora ponta > 0, usa esse valor
-  if (forapontaNum > 0) {
-    return { injetado: forapontaNum, status: 'ok' }
+    return null
   }
 
-  // Se fora ponta é 0, procura em ponta
-  if (pontaNum > 0) {
-    return { injetado: pontaNum, status: 'ok' }
+  let injetadoMedidorPonta = findFieldValue(['injetado_medidor_ponta', 'injetado medidor ponta', 'injetado_ponta', 'injetado ponta'])
+  let injetadoMedidorFoaPonta = findFieldValue(['injetado_medidor_fora_ponta', 'injetado medidor fora ponta', 'injetado_fora_ponta', 'injetado fora ponta'])
+
+  // 🔄 Se AMBOS foram encontrados
+  if (injetadoMedidorPonta !== null && injetadoMedidorFoaPonta !== null) {
+    const soma = injetadoMedidorPonta + injetadoMedidorFoaPonta
+    // ZERADO: somados são literalmente 0
+    if (soma === 0) {
+      return { injetado: 0, status: 'injetado_zerado' }
+    }
+    // OK: tem alguma injeção
+    if (soma > 0) {
+      return { injetado: soma, status: 'ok' }
+    }
   }
 
-  // Se ambos são 0 (problema)
-  if (forapontaNum === 0 && pontaNum === 0) {
-    return { injetado: 0, status: 'injetado_zerado' }
+  // 🔄 Se APENAS UM foi encontrado
+  if (injetadoMedidorPonta !== null && injetadoMedidorFoaPonta === null) {
+    if (injetadoMedidorPonta > 0) {
+      return { injetado: injetadoMedidorPonta, status: 'ok' }
+    }
+    if (injetadoMedidorPonta === 0) {
+      return { injetado: 0, status: 'injetado_zerado' }
+    }
   }
 
-  // Se não encontrou nenhum valor
+  if (injetadoMedidorFoaPonta !== null && injetadoMedidorPonta === null) {
+    if (injetadoMedidorFoaPonta > 0) {
+      return { injetado: injetadoMedidorFoaPonta, status: 'ok' }
+    }
+    if (injetadoMedidorFoaPonta === 0) {
+      return { injetado: 0, status: 'injetado_zerado' }
+    }
+  }
+
+  // Se não encontrou nenhum campo de injeção
   return { injetado: null, status: 'sem_dados' }
 }
 
@@ -278,6 +314,7 @@ async function getMetrics(supabase: ReturnType<typeof createClient<Database>>) {
     if (!clientsMap.has(clientKey)) {
       clientsMap.set(clientKey, {
         cliente: clientLabel,
+        cpfCnpj: row['CPF/CNPJ'] || null,
         totalUCs: 0,
         ucs: [],
         totalInjetado: 0,

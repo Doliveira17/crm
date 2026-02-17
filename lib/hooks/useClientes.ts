@@ -48,9 +48,11 @@ type ClienteUpdateInput = ClienteUpdate & {
   observacoes_extras?: string | null
 }
 
-export function useClientesList(searchTerm = '', page = 0, pageSize = 100) {
+export function useClientesList(searchTerm = '', page = 0, pageSize = 30) {
   return useQuery({
-    queryKey: ['clientes', searchTerm, page],
+    queryKey: ['clientes', searchTerm, page, pageSize],
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
     queryFn: async () => {
       const from = page * pageSize
       const to = from + pageSize - 1
@@ -113,10 +115,6 @@ export function useClientesList(searchTerm = '', page = 0, pageSize = 100) {
         total: count || 0
       }
     },
-    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
-    gcTime: 10 * 60 * 1000, // Manter na memória por 10 minutos
-    retry: 1,
-    retryDelay: 1000,
   })
 }
 

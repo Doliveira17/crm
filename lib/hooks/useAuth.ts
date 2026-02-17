@@ -108,15 +108,21 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
+      // Limpar estados imediatamente
       setUser(null)
       setRole('admin')
       setPermissions({})
       setRoleLoading(false)
-      router.replace('/login')
+      
+      // Fazer signOut do Supabase
+      await supabase.auth.signOut({ scope: 'local' })
+      
+      // Redirecionar para login
+      router.push('/login')
     } catch (error: any) {
       console.error('Erro ao fazer logout:', error)
+      // Mesmo com erro, tentar redirecionar
+      router.push('/login')
     }
   }
 

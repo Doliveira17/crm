@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -50,15 +51,14 @@ interface Interacao {
 
 export default function InteracoesPage() {
   const router = useRouter()
-  const [interacoes, setInteracoes] = useState<Interacao[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'interagidos' | 'pendentes'>('todos')
   const [selectedInteracao, setSelectedInteracao] = useState<Interacao | null>(null)
 
-  const fetchInteracoes = async () => {
-    setLoading(true)
-    try {
+  // OTIMIZAÇÃO: Usar React Query para cache automático
+  const { data: interacoes = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['interacoes'],
+    queryFn: async () => {
       // Buscar relatórios com joins em uma única query (evita N+1)
       const { data, error } = await (supabase as any)
         .from('relatorio_envios')
@@ -81,22 +81,13 @@ export default function InteracoesPage() {
 
       if (error) throw error
 
-      const interacoesComDados = (data || []).map((item: any) => ({
+      return (data || []).map((item: any) => ({
         ...item,
         sugestao_cliente: item['sugestão_cliente'] ?? null,
-      }))
-
-      setInteracoes(interacoesComDados)
-    } catch (error) {
-      console.error('Erro ao buscar interações:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchInteracoes()
-  }, [])
+      })) as Interacao[]
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutos - dados mais dinâmicos
+  })
 
   // Filtrar interações
   const interacoesFiltradas = interacoes.filter((interacao) => {
@@ -150,7 +141,7 @@ export default function InteracoesPage() {
             Acompanhe todas as interações dos contatos com os relatórios
           </p>
         </div>
-        <Button onClick={fetchInteracoes} variant="outline" className="gap-2">
+        <Button onClick={() => refetch()} variant="outline" className="gap-2">
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>

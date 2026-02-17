@@ -41,6 +41,8 @@ export interface Database {
           emp_site: string | null
           ins_municipal: string | null
           grupo_economico_id: string | null
+          estado_de_chamado: string | null
+          historico_validacao: Json | null
         }
         Insert: {
           id?: string
@@ -73,6 +75,8 @@ export interface Database {
           emp_site?: string | null
           ins_municipal?: string | null
           grupo_economico_id?: string | null
+          estado_de_chamado?: string | null
+          historico_validacao?: Json |null
         }
         Update: {
           id?: string
@@ -105,6 +109,8 @@ export interface Database {
           emp_site?: string | null
           ins_municipal?: string | null
           grupo_economico_id?: string | null
+          estado_de_chamado?: string | null
+          historico_validacao?: Json | null
         }
         Relationships: []
       }
@@ -445,6 +451,36 @@ export interface Database {
           id?: string
           nome?: string
           descricao?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_ucs_validacao: {
+        Row: {
+          id: string
+          documento: string
+          uc: string
+          estado_de_chamado: string | null
+          historico_validacao: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          documento: string
+          uc: string
+          estado_de_chamado?: string | null
+          historico_validacao?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          documento?: string
+          uc?: string
+          estado_de_chamado?: string | null
+          historico_validacao?: Json
           created_at?: string
           updated_at?: string
         }

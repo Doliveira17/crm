@@ -49,18 +49,47 @@ interface DashboardData {
 function useDashboardData() {
   return useQuery({
     queryKey: ['dashboard-data'],
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos (antes era cacheTime)
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
     queryFn: async () => {
       const agora = new Date()
       const seteDiasAtras = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000)
 
+      // OTIMIZAÇÃO: Dividir em 3 batches ao invés de 16 queries simultâneas
+      // Isso reduz sobrecarga no banco e melhora performance
+      
+      // BATCH 1: Contadores de clientes
       const [
         clientesResult,
         clientesPFResult,
         clientesPJResult,
         clientesFavoritosResult,
+        clientesSemanaisResult,
+      ] = await Promise.all([
+        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }),
+        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }).eq('tipo_cliente', 'PF'),
+        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }).eq('tipo_cliente', 'PJ'),
+        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }).eq('favorito', true),
+        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }).gte('created_at', seteDiasAtras.toISOString()),
+      ])
+
+      // BATCH 2: Contadores de contatos
+      const [
         contatosResult,
         contatosEmailResult,
         contatosTelResult,
+        contatosSemanaisResult,
+      ] = await Promise.all([
+        supabase.from('crm_contatos').select('id', { count: 'exact', head: true }),
+        supabase.from('crm_contatos').select('id', { count: 'exact', head: true }).not('email', 'is', null),
+        supabase.from('crm_contatos').select('id', { count: 'exact', head: true }).not('celular', 'is', null),
+        supabase.from('crm_contatos').select('id', { count: 'exact', head: true }).gte('created_at', seteDiasAtras.toISOString()),
+      ])
+
+      // BATCH 3: Outros contadores e listas
+      const [
         vinculosResult,
         tagsResult,
         interacoesResult,
@@ -68,16 +97,7 @@ function useDashboardData() {
         interacoesPendentesResult,
         ultimosClientesResult,
         ultimosContatosResult,
-        clientesSemanaisResult,
-        contatosSemanaisResult,
       ] = await Promise.all([
-        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }),
-        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }).eq('tipo_cliente', 'PF'),
-        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }).eq('tipo_cliente', 'PJ'),
-        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }).eq('favorito', true),
-        supabase.from('crm_contatos').select('id', { count: 'exact', head: true }),
-        supabase.from('crm_contatos').select('id', { count: 'exact', head: true }).not('email', 'is', null),
-        supabase.from('crm_contatos').select('id', { count: 'exact', head: true }).not('celular', 'is', null),
         supabase.from('crm_clientes_contatos').select('id', { count: 'exact', head: true }),
         supabase.from('crm_tags').select('id', { count: 'exact', head: true }),
         supabase.from('relatorio_envios').select('id', { count: 'exact', head: true }),
@@ -85,8 +105,6 @@ function useDashboardData() {
         supabase.from('relatorio_envios').select('id', { count: 'exact', head: true }).eq('viewed', false),
         supabase.from('crm_clientes').select('id, razao_social, tipo_cliente, created_at, favorito, tags').order('created_at', { ascending: false }).limit(5),
         supabase.from('crm_contatos').select('id, nome_completo, email, celular, cargo, created_at').order('created_at', { ascending: false }).limit(5),
-        supabase.from('crm_clientes').select('id', { count: 'exact', head: true }).gte('created_at', seteDiasAtras.toISOString()),
-        supabase.from('crm_contatos').select('id', { count: 'exact', head: true }).gte('created_at', seteDiasAtras.toISOString()),
       ])
 
       return {
@@ -110,8 +128,6 @@ function useDashboardData() {
         }
       } as DashboardData
     },
-    staleTime: 30000,
-    refetchInterval: 60000,
   })
 }
 

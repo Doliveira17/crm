@@ -13,6 +13,8 @@ type ContatoUpdate = Database['public']['Tables']['crm_contatos']['Update']
 export function useContatosList(searchTerm = '') {
   return useQuery({
     queryKey: ['contatos', searchTerm],
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
     queryFn: async () => {
       let query = supabase
         .from('crm_contatos')
@@ -30,7 +32,6 @@ export function useContatosList(searchTerm = '') {
       if (error) throw error
       return data as Contato[]
     },
-    staleTime: 30000, // Cache por 30s
   })
 }
 

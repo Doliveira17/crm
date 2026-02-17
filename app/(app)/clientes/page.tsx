@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useClientesList } from '@/lib/hooks/useClientes'
+import { useDebounce } from '@/lib/hooks/useDebounce'
 import { SearchInput } from '@/components/common/SearchInput'
 import { EmptyState } from '@/components/common/EmptyState'
 import { LoadingState } from '@/components/common/LoadingState'
@@ -43,8 +44,10 @@ import {
 export default function ClientesPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 400)
   const [page, setPage] = useState(0)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
+  const pageSize = 30
   
   // Estados dos filtros avançados
   const [filters, setFilters] = useState({
@@ -56,11 +59,11 @@ export default function ClientesPage() {
     temWhatsapp: null as boolean | null,
   })
   
-  const { data, isLoading } = useClientesList(searchTerm, page, 100)
+  const { data, isLoading } = useClientesList(debouncedSearch, page, pageSize)
   
   const clientes = data?.clientes || []
   const total = data?.total || 0
-  const totalPages = Math.ceil(total / 100)
+  const totalPages = Math.ceil(total / pageSize)
   
   // Resetar página ao buscar
   useEffect(() => {

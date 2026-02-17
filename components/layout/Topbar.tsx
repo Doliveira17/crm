@@ -12,12 +12,24 @@ export function Topbar() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut()
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
+      if (error) throw error
+      
+      // Limpar storage local
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+      
       toast.success('Logout realizado com sucesso')
       router.push('/login')
+      router.refresh()
     } catch (error) {
+      console.error('Erro ao fazer logout:', error)
       toast.error('Erro ao fazer logout')
-      console.error(error)
+      // Force logout even if error
+      router.push('/login')
+      router.refresh()
     }
   }
 

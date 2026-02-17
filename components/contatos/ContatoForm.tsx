@@ -33,13 +33,11 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
     defaultValues: {
       ...initialData,
       canal_relatorio: initialData?.canal_relatorio ?? null,
-      tipos_relacionamento: initialData?.tipos_relacionamento ?? null,
     },
   })
 
   const [celularValue, setCelularValue] = useState(initialData?.celular || '')
   const [redesSociais, setRedesSociais] = useState(initialData?.pessoa_redes || '')
-  const [tiposRelacionamento, setTiposRelacionamento] = useState<string[]>(initialData?.tipos_relacionamento || [])
 
   // Watch canal_relatorio
   const canalRelatorio = watch('canal_relatorio')
@@ -64,8 +62,7 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
   const currentFormData = JSON.stringify({
     ...watchedValues,
     celular: celularValue,
-    pessoa_redes: redesSociais,
-    tipos_relacionamento: tiposRelacionamento
+    pessoa_redes: redesSociais
   })
 
   // Hook para Ctrl+S salvar
@@ -292,45 +289,6 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading }: Contat
               />
             </div>
 
-            {/* SEÇÃO: TIPOS DE RELACIONAMENTO */}
-            <div className="space-y-3 md:col-span-2">
-              <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Handshake className="h-4 w-4 text-slate-600" />
-                Tipo de Relacionamento
-              </Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                {[
-                  'Atendimento Avulso',
-                  'Contrato O&M', 
-                  'Gestão de Creditos',
-                  'O&M com garantia Estendida',
-                  'Sem Atendimento',
-                  'VIP',
-                  'VIP com Contrato O&M'
-                ].map((tipo) => (
-                  <label 
-                    key={tipo}
-                    className={`flex items-center space-x-2 p-2.5 rounded-lg border hover:border-slate-400 hover:bg-slate-50 transition-colors text-xs cursor-pointer bg-white ${tiposRelacionamento.includes(tipo) ? 'border-slate-500 bg-slate-50' : 'border-slate-300'}`}
-                  >
-                    <Checkbox
-                      checked={tiposRelacionamento.includes(tipo)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setTiposRelacionamento([...tiposRelacionamento, tipo])
-                        } else {
-                          setTiposRelacionamento(tiposRelacionamento.filter(t => t !== tipo))
-                        }
-                        setValue('tipos_relacionamento', checked ? [...tiposRelacionamento, tipo] : tiposRelacionamento.filter(t => t !== tipo))
-                        markAsChanged()
-                      }}
-                      id={`tipo-${tipo}`}
-                      className="h-3.5 w-3.5"
-                    />
-                    <span className="leading-tight">{tipo}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>

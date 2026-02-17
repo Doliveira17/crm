@@ -67,31 +67,47 @@ export function useTecnica() {
       try {
         setIsLoading(true)
         
-        // Buscar todos os clientes
+        // OTIMIZAÇÃO: Usar LEFT JOIN para fazer 1 query ao invés de 2
         const { data: clientes, error: clientesError } = await supabase
           .from('crm_clientes')
-          .select('id, razao_social, documento, telefone_principal, email_principal, updated_at')
+          .select(`
+            id,
+            razao_social,
+            documento,
+            telefone_principal,
+            email_principal,
+            updated_at,
+            tecnica:crm_clientes_tecnica(
+              id,
+              nome_planta,
+              modalidade,
+              classificacao,
+              tipo_local,
+              possui_internet,
+              data_install,
+              venc_garantia,
+              garantia_extendida,
+              potencia_usina_kwp,
+              quant_inverter,
+              marca_inverter,
+              mod_inverter,
+              serie_inverter,
+              quant_modulos,
+              marca_modulos,
+              mod_modulos
+            )
+          `)
           .order('updated_at', { ascending: false })
 
         if (clientesError) throw clientesError
 
-        // Buscar todos os dados técnicos
-        const { data: tecnicaData, error: tecnicaError } = await supabase
-          .from('crm_clientes_tecnica')
-          .select('*')
-
-        if (tecnicaError) throw tecnicaError
-
-        const tecnicaByClienteId = new Map<string, any>()
-        ;(tecnicaData || []).forEach((tecnica: any) => {
-          if (tecnica?.cliente_id) {
-            tecnicaByClienteId.set(tecnica.cliente_id, tecnica)
-          }
-        })
-
-        // Fazer merge: cada cliente com seus dados técnicos (se existir)
+        // Transformar resposta do JOIN
         const merged = clientes?.map((cliente: any) => {
-          const tecnica = tecnicaByClienteId.get(cliente.id)
+          // tecnica pode ser array (múltiplos registros) ou objeto/null (único/nenhum)
+          const tecnica = Array.isArray(cliente.tecnica) 
+            ? cliente.tecnica[0] 
+            : cliente.tecnica
+
           return {
             id: cliente.id,
             cliente_id: cliente.id,
