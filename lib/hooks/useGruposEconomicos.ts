@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 export interface GrupoEconomico {
   id: string
   nome: string
-  descricao?: string
+  descricao: string | null
   created_at: string
   updated_at: string
 }

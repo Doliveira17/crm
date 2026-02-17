@@ -246,6 +246,186 @@ export interface Database {
         }
         Relationships: []
       }
+      crm_tags: {
+        Row: {
+          id: string
+          nome: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      crm_clientes_tecnica: {
+        Row: {
+          id: string
+          cliente_id: string | null
+          documento: string
+          razao_social: string | null
+          nome_planta: string | null
+          modalidade: string | null
+          classificacao: string | null
+          tipo_local: string | null
+          possui_internet: boolean | null
+          data_install: string | null
+          venc_garantia: string | null
+          potencia_usina_kwp: number | null
+          quant_inverter: number | null
+          marca_inverter: string | null
+          mod_inverter: string | null
+          serie_inverter: string | null
+          quant_modulos: number | null
+          marca_modulos: string | null
+          mod_modulos: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          cliente_id?: string | null
+          documento: string
+          razao_social?: string | null
+          nome_planta?: string | null
+          modalidade?: string | null
+          classificacao?: string | null
+          tipo_local?: string | null
+          possui_internet?: boolean | null
+          data_install?: string | null
+          venc_garantia?: string | null
+          potencia_usina_kwp?: number | null
+          quant_inverter?: number | null
+          marca_inverter?: string | null
+          mod_inverter?: string | null
+          serie_inverter?: string | null
+          quant_modulos?: number | null
+          marca_modulos?: string | null
+          mod_modulos?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          cliente_id?: string | null
+          documento?: string
+          razao_social?: string | null
+          nome_planta?: string | null
+          modalidade?: string | null
+          classificacao?: string | null
+          tipo_local?: string | null
+          possui_internet?: boolean | null
+          data_install?: string | null
+          venc_garantia?: string | null
+          potencia_usina_kwp?: number | null
+          quant_inverter?: number | null
+          marca_inverter?: string | null
+          mod_inverter?: string | null
+          serie_inverter?: string | null
+          quant_modulos?: number | null
+          marca_modulos?: string | null
+          mod_modulos?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fila_extracao: {
+        Row: {
+          id: string
+          UC: string | null
+          cliente: string | null
+          mes_referente: string | null
+          injetado: string | number | null
+          dados_inversor: Json | null
+          caminho_arquivo: string | null
+          status: string | null
+          dados_extraidos: Json | null
+          cnpj: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          UC?: string | null
+          cliente?: string | null
+          mes_referente?: string | null
+          injetado?: string | number | null
+          dados_inversor?: Json | null
+          caminho_arquivo?: string | null
+          status?: string | null
+          dados_extraidos?: Json | null
+          cnpj?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          UC?: string | null
+          cliente?: string | null
+          mes_referente?: string | null
+          injetado?: string | number | null
+          dados_inversor?: Json | null
+          caminho_arquivo?: string | null
+          status?: string | null
+          dados_extraidos?: Json | null
+          cnpj?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      growatt: {
+        Row: {
+          id?: string
+          CLIENTE: string | null
+          "CPF/CNPJ": string | null
+          UNIDADES_CONSUMIDORAS: string | null
+          Plant_ID: string | null
+          INVERSOR: string | null
+          saldo_credito: number | null
+          porcentagem: number | null
+          "histórico_gerado": Json | null
+          "data_ativação": string | null
+          Geracao_Ac_Mensal: number | null
+          Geracao_Ac_Anual: number | null
+          Retorno_Financeiro: number | null
+        }
+        Insert: {
+          id?: string
+          CLIENTE?: string | null
+          "CPF/CNPJ"?: string | null
+          UNIDADES_CONSUMIDORAS?: string | null
+          Plant_ID?: string | null
+          INVERSOR?: string | null
+          saldo_credito?: number | null
+          porcentagem?: number | null
+          "histórico_gerado"?: Json | null
+          "data_ativação"?: string | null
+          Geracao_Ac_Mensal?: number | null
+          Geracao_Ac_Anual?: number | null
+          Retorno_Financeiro?: number | null
+        }
+        Update: {
+          id?: string
+          CLIENTE?: string | null
+          "CPF/CNPJ"?: string | null
+          UNIDADES_CONSUMIDORAS?: string | null
+          Plant_ID?: string | null
+          INVERSOR?: string | null
+          saldo_credito?: number | null
+          porcentagem?: number | null
+          "histórico_gerado"?: Json | null
+          "data_ativação"?: string | null
+          Geracao_Ac_Mensal?: number | null
+          Geracao_Ac_Anual?: number | null
+          Retorno_Financeiro?: number | null
+        }
+        Relationships: []
+      }
       grupos_economicos: {
         Row: {
           id: string

@@ -76,7 +76,6 @@ export function useTecnica() {
         if (clientesError) throw clientesError
 
         // Buscar todos os dados técnicos
-        // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
         const { data: tecnicaData, error: tecnicaError } = await supabase
           .from('crm_clientes_tecnica')
           .select('*')
@@ -137,7 +136,6 @@ export function useTecnica() {
   // Buscar técnica por ID
   const getTecnicaById = async (id: string) => {
     try {
-      // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data, error: err } = await supabase
         .from('crm_clientes_tecnica')
         .select('*')
@@ -155,7 +153,6 @@ export function useTecnica() {
   // Buscar técnica por documento
   const getTecnicaByDocumento = async (documento: string) => {
     try {
-      // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data, error: err } = await supabase
         .from('crm_clientes_tecnica')
         .select('*')
@@ -175,10 +172,9 @@ export function useTecnica() {
     try {
       const payload = sanitizeTecnicaPayload(formData)
 
-      // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data: newData, error: err } = await supabase
         .from('crm_clientes_tecnica')
-        .insert(payload)
+        .insert(payload as any)
         .select()
         .single()
 
@@ -198,10 +194,9 @@ export function useTecnica() {
     try {
       const payload = sanitizeTecnicaPayload(formData)
 
-      // @ts-expect-error - tabela crm_clientes_tecnica ainda não está nos tipos gerados
       const { data: updatedData, error: err } = await supabase
         .from('crm_clientes_tecnica')
-        .update(payload)
+        .update(payload as any)
         .eq('id', id)
         .select()
         .single()
