@@ -130,10 +130,10 @@ export function Sidebar() {
         {!isCollapsed && (
           <Link href="/dashboard" className="group cursor-pointer flex-1">
             <div className="flex items-baseline gap-1 transition-all duration-300 group-hover:scale-105 origin-left group-hover:drop-shadow-md logo-container">
-              <span className="text-2xl font-light tracking-tight text-emerald-600 transition-all duration-300 group-hover:text-emerald-700">Solar</span>
-              <span className="text-2xl font-bold tracking-tight text-foreground transition-all duration-300 group-hover:text-foreground">Energy</span>
-              <span className="logo-badge ml-2 rounded-md bg-muted px-2.5 py-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-all duration-300 group-hover:bg-foreground group-hover:text-background group-hover:shadow-md">CRM</span>
-            </div>
+                <span className="text-2xl font-light tracking-tight text-emerald-600 transition-all duration-300 group-hover:text-emerald-700">Solar</span>
+                <span className="text-2xl font-bold tracking-tight text-foreground transition-all duration-300 group-hover:text-foreground">Energy</span>
+                <span className="logo-badge ml-2 rounded-md bg-muted px-2.5 py-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-all duration-300 group-hover:bg-foreground group-hover:text-background group-hover:shadow-md">CRM</span>
+              </div>
           </Link>
         )}
         <Button
@@ -212,6 +212,7 @@ export function Sidebar() {
             <div className="flex-1 min-w-0 text-left">
               <p className="truncate text-sm font-semibold leading-tight text-foreground">{getUserName()}</p>
               <p className="truncate text-xs leading-tight text-muted-foreground">Sistema CRM</p>
+              <p className="text-[0.6rem] leading-none text-muted-foreground/40 mt-1 font-medium tracking-wider uppercase">v1.3.public</p>
             </div>
           )}
 
