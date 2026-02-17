@@ -12,24 +12,27 @@ export function Topbar() {
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut({ scope: 'local' })
-      if (error) throw error
-      
-      // Limpar storage local
+      // Limpar storage local primeiro
       if (typeof window !== 'undefined') {
         localStorage.clear()
         sessionStorage.clear()
       }
       
+      // Fazer signOut do Supabase
+      await supabase.auth.signOut({ scope: 'global' })
+      
       toast.success('Logout realizado com sucesso')
-      router.push('/login')
-      router.refresh()
+      
+      // Redirecionar e forçar reload completo
+      window.location.href = '/login'
     } catch (error) {
       console.error('Erro ao fazer logout:', error)
-      toast.error('Erro ao fazer logout')
       // Force logout even if error
-      router.push('/login')
-      router.refresh()
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+      window.location.href = '/login'
     }
   }
 
