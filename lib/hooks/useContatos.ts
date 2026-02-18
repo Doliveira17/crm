@@ -115,23 +115,30 @@ export function useCreateContato() {
       // Calcular autorizacao_mensagem baseado em canal_relatorio
       const autorizacao = canaisRelatorio !== null && canaisRelatorio.length > 0
 
+      // Remover campos virtuais que não existem na tabela crm_contatos
+      const { clientes_vinculados: _cv, ...contatoData } = contato as any
+
       const normalized: any = {
-        ...contato,
-        nome_completo: normalizeText(contato.nome_completo) || '',
-        apelido_relacionamento: normalizeText(contato.apelido_relacionamento),
-        cargo: normalizeText(contato.cargo),
-        celular: normalizeDigits(contato.celular),
-        email: normalizeEmail(contato.email),
-        data_aniversario: contato.data_aniversario && contato.data_aniversario.trim() !== '' ? contato.data_aniversario : null,
-        pessoa_site: normalizeText(contato.pessoa_site),
-        pessoa_redes: contato.pessoa_redes || null,
-        observacoes: normalizeText(contato.observacoes),
+        ...contatoData,
+        nome_completo: normalizeText(contatoData.nome_completo) || '',
+        apelido_relacionamento: normalizeText(contatoData.apelido_relacionamento),
+        cargo: normalizeText(contatoData.cargo),
+        celular: normalizeDigits(contatoData.celular),
+        email: normalizeEmail(contatoData.email),
+        data_aniversario: contatoData.data_aniversario && contatoData.data_aniversario.trim() !== '' ? contatoData.data_aniversario : null,
+        pessoa_site: normalizeText(contatoData.pessoa_site),
+        pessoa_redes: contatoData.pessoa_redes || null,
+        observacoes: normalizeText(contatoData.observacoes),
         autorizacao_mensagem: autorizacao,
         canal_relatorio: canaisRelatorio,
-        updated_at: new Date().toISOString(),
       }
 
       console.log('🔵 useCreateContato - Dados normalizados:', normalized)
+      
+      // Validar campo obrigatório
+      if (!normalized.nome_completo || normalized.nome_completo.trim() === '') {
+        throw new Error('Nome completo é obrigatório')
+      }
 
       const { data, error } = await supabase
         .from('crm_contatos')
@@ -141,15 +148,19 @@ export function useCreateContato() {
 
       if (error) {
         console.error('🔴 Erro do Supabase:', error)
+        console.error('🔴 Erro código:', error.code)
+        console.error('🔴 Erro mensagem:', error.message)
+        console.error('🔴 Erro detalhes:', error.details)
+        console.error('🔴 Erro hint:', error.hint)
         throw new Error(error.message || 'Erro ao criar contato')
       }
       
       console.log('🟢 Contato criado com sucesso:', data)
       return data
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ onSuccess - Contato retornado:', data)
       queryClient.invalidateQueries({ queryKey: ['contatos'] })
-      toast.success('Contato criado com sucesso')
     },
     onError: (error: any) => {
       console.error('🔴 onError capturado:', error)

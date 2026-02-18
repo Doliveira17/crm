@@ -63,27 +63,39 @@ export function useCreateVinculo() {
 
   return useMutation({
     mutationFn: async (vinculo: VinculoInsert) => {
+      console.log('🔵 useCreateVinculo - Dados recebidos:', vinculo)
+      
+      // Criar o vínculo
+      const { data: vinculoData, error: vinculoError } = await supabase
+        .from('crm_clientes_contatos')
+        .insert(vinculo)
+        .select()
+        .single()
+
+      if (vinculoError) {
+        console.error('🔴 Erro ao criar vínculo:', vinculoError)
+        console.error('🔴 Erro código:', vinculoError.code)
+        console.error('🔴 Erro mensagem:', vinculoError.message)
+        console.error('🔴 Erro detalhes:', vinculoError.details)
+        console.error('🔴 Erro hint:', vinculoError.hint)
+        throw vinculoError
+      }
+
+      console.log('🟢 Vínculo criado com sucesso:', vinculoData)
+
+      // Tentar criar registro em relatorio_envios (não falha se houver erro aqui)
       try {
-        // Criar o vínculo
-        const { data: vinculoData, error: vinculoError } = await supabase
-          .from('crm_clientes_contatos')
-          .insert(vinculo)
-          .select()
-          .single()
-
-        if (vinculoError) throw vinculoError
-
         // Verificar se já existe registro em relatorio_envios para este cliente/contato
-        const { data: existingRelatorio } = await supabase
+        const { data: existingRelatorio, error: checkError } = await supabase
           .from('relatorio_envios')
           .select('id')
           .eq('cliente_id', vinculo.cliente_id)
           .eq('contato_id', vinculo.contato_id)
           .maybeSingle()
 
-      // Só criar se não existir
-      if (!existingRelatorio) {
-        try {
+        if (checkError) {
+          console.warn('⚠️ Aviso ao verificar relatório:', checkError.message)
+        } else if (!existingRelatorio) {
           // Buscar informações do contato para criar registro em relatorio_envios
           const { data: contatoData, error: contatoError } = await supabase
             .from('crm_contatos')
@@ -92,7 +104,7 @@ export function useCreateVinculo() {
             .single()
 
           if (contatoError) {
-            console.warn('Aviso ao buscar contato para relatório:', contatoError.message)
+            console.warn('⚠️ Aviso ao buscar contato para relatório:', contatoError.message)
           } else if (contatoData) {
             // Definir nome_falado_dono baseado se é contato principal ou não
             const nomeFaladoDono = vinculo.contato_principal 
@@ -111,35 +123,33 @@ export function useCreateVinculo() {
               })
 
             if (relatorioError) {
-              console.warn('Aviso ao criar relatório de envio:', relatorioError.message)
+              console.warn('⚠️ Aviso ao criar relatório de envio:', relatorioError.message)
               // Não falhar a operação principal por causa do relatório
+            } else {
+              console.log('🟢 Relatório de envio criado')
             }
           }
-        } catch (error) {
-          console.warn('Aviso na criação do relatório:', error)
-          // Não falhar a operação principal por causa do relatório
         }
+      } catch (error) {
+        console.warn('⚠️ Aviso na criação do relatório:', error)
+        // Não falhar a operação principal por causa do relatório
       }
 
       return vinculoData
-    } catch (error) {
-      // Se houver qualquer erro na criação do relatório, ainda assim retornar o vínculo
-      console.warn('Erro geral na criação do vínculo:', error)
-      throw error // Re-throw para que a mutação falhe se for erro crítico
-    }
     },
     onSuccess: (_, variables) => {
+      console.log('✅ onSuccess - Vínculo retornado')
       queryClient.invalidateQueries({ queryKey: ['vinculos', variables.cliente_id] })
       queryClient.invalidateQueries({ queryKey: ['vinculos-contato', variables.contato_id] })
-      toast.success('Contato vinculado com sucesso')
     },
     onError: (error: any) => {
+      console.error('🔴 onError capturado:', error)
       if (error.code === '23505') {
         toast.error('Este contato já está vinculado a este cliente')
       } else {
-        toast.error('Erro ao vincular contato')
+        const message = error?.message || 'Erro ao vincular contato'
+        toast.error(message)
       }
-      console.error(error)
     },
   })
 }

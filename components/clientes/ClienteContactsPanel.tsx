@@ -417,47 +417,41 @@ export function ClienteContactsPanel({
                 const novoContato = await createContato.mutateAsync(data) as { id: string } | null
                 console.log('✅ Contato criado com sucesso:', novoContato)
                 
-                if (novoContato?.id) {
-                  const vinculoData = {
-                    cliente_id: clienteId,
-                    contato_id: novoContato.id,
-                    cargo_no_cliente: data.cargo || null,
-                    contato_principal: false
-                  }
-                  console.log('Criando vínculo com dados:', vinculoData)
-                  
-                  await createVinculo.mutateAsync(vinculoData)
-                  console.log('✅ Vínculo criado com sucesso')
+                if (!novoContato?.id) {
+                  throw new Error('Contato não foi criado corretamente - ID não retornado')
                 }
                 
+                const vinculoData = {
+                  cliente_id: clienteId,
+                  contato_id: novoContato.id,
+                  cargo_no_cliente: data.cargo || null,
+                  contato_principal: false
+                }
+                console.log('=== INICIANDO VINCULAÇÃO DE CONTATO ===')
+                console.log('Dados do vínculo:', JSON.stringify(vinculoData, null, 2))
+                
+                const novoVinculo = await createVinculo.mutateAsync(vinculoData)
+                console.log('✅ Vínculo criado com sucesso:', novoVinculo)
+                
+                // Fechar modal e mostrar sucesso
                 setNewContactDialogOpen(false)
                 toast.success('Contato criado e vinculado com sucesso')
+                
               } catch (error: any) {
                 console.error('❌ ERRO COMPLETO:', error)
-                console.error('❌ Tipo do erro:', typeof error)
-                console.error('❌ Keys do erro:', Object.keys(error || {}))
-                console.error('❌ String do erro:', String(error))
-                console.error('❌ JSON do erro:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
-                
-                if (error?.message) {
-                  console.error('❌ Mensagem:', error.message)
-                }
-                if (error?.code) {
-                  console.error('❌ Código:', error.code)
-                }
-                if (error?.details) {
-                  console.error('❌ Detalhes:', error.details)
-                }
-                if (error?.hint) {
-                  console.error('❌ Dica:', error.hint)
-                }
+                console.error('❌ Tipo:', typeof error)
+                console.error('❌ Mensagem:', error?.message)
+                console.error('❌ Código:', error?.code)
+                console.error('❌ Detalhes:', error?.details)
+                console.error('❌ Stack:', error?.stack)
                 
                 const errorMessage = error?.message || error?.toString() || 'Erro desconhecido ao criar contato'
                 toast.error(`Erro: ${errorMessage}`)
+                
+                throw error // Re-throw para o form saber que falhou
               }
             }}
             onCancel={() => setNewContactDialogOpen(false)}
-            loading={createContato.isPending || createVinculo.isPending}
           />
         </DialogContent>
       </Dialog>

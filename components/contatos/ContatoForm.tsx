@@ -63,6 +63,9 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
     initialData?.clientes_vinculados || []
   )
 
+  // Estado de loading local - independente do prop loading
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   // Função para marcar alterações
   const markAsChanged = () => {
     setHasChanges(true)
@@ -101,12 +104,13 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault()
-        if (!loading) {
+        if (!isSubmitting) {
           handleSubmit((data: any) => {
+            setIsSubmitting(true)
             onSubmit({
               ...data,
               clientes_vinculados: clientesVinculados,
-            })
+            }).finally(() => setIsSubmitting(false))
           })()
         }
       }
@@ -114,7 +118,7 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleSubmit, onSubmit, loading])
+  }, [handleSubmit, onSubmit, isSubmitting])
 
   // Detectar mudanças no formulário
   useEffect(() => {
@@ -229,21 +233,30 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
       window.removeEventListener('popstate', handlePopState)
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [autoSaveEnabled, hasChanges, loading, handleSubmit, onSubmit, currentFormData, watch])
+  }, [autoSaveEnabled, hasChanges, isSubmitting, handleSubmit, onSubmit, currentFormData, watch])
 
   return (
-    <form onSubmit={handleSubmit((data) => {
+    <form onSubmit={handleSubmit(async (data) => {
       // Construir array de canais de comunicação
       const canaisComun: string[] = []
       if (prefEmail) canaisComun.push('email')
       if (prefWhatsapp) canaisComun.push('whatsapp')
 
-      // Adicionar clientes vinculados e preferências aos dados do formulário
-      onSubmit({
-        ...data,
-        canal_relatorio: canaisComun.length > 0 ? canaisComun : null,
-        clientes_vinculados: clientesVinculados,
-      })
+      // Marcar como enviando
+      setIsSubmitting(true)
+
+      try {
+        // Chamar o handler assíncrono e aguardar
+        await onSubmit({
+          ...data,
+          canal_relatorio: canaisComun.length > 0 ? canaisComun : null,
+          clientes_vinculados: clientesVinculados,
+        })
+      } catch (error) {
+        console.error('Erro ao submeter formulário:', error)
+      } finally {
+        setIsSubmitting(false)
+      }
     })} className="space-y-6">
       <div className="space-y-5 p-6 bg-white rounded-lg border border-slate-300">
         <div className="flex items-center justify-between mb-2">
@@ -287,6 +300,18 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
                 placeholder="Ex: Maria, Noni, Toni..."
                 className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500 transition-all"
                 {...register('apelido_relacionamento')} 
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="celular" className="text-sm font-bold text-slate-900">
+                Telefone / Celular
+              </Label>
+              <Input 
+                id="celular" 
+                placeholder="Ex: (67) 99999-9999"
+                className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500 transition-all"
+                {...register('celular')} 
               />
             </div>
 
@@ -666,18 +691,18 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
           type="button" 
           variant="outline" 
           onClick={onCancel} 
-          disabled={loading}
+          disabled={isSubmitting}
           className="px-6 h-10 rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50"
         >
           Cancelar
         </Button>
         <Button 
           type="submit" 
-          disabled={loading} 
+          disabled={isSubmitting} 
           title="Salvar (Ctrl+S)"
           className="px-6 h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
         >
-          {loading ? 'Salvando...' : hasChanges ? 'Salvar Alterações' : 'Salvar'}
+          {isSubmitting ? 'Salvando...' : hasChanges ? 'Salvar Alterações' : 'Salvar'}
         </Button>
       </div>
     </form>
