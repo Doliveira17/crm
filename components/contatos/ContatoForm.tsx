@@ -242,7 +242,7 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
   return (
     <form onSubmit={handleSubmit(async (data) => {
       // Construir array de canais de comunicação
-      const canaisComun: string[] = []
+      const canaisComun: ('email' | 'whatsapp' | 'grupo_whatsapp')[] = []
       if (prefEmail) canaisComun.push('email')
       if (prefWhatsapp) canaisComun.push('whatsapp')
 
