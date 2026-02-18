@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppShell } from '@/components/layout/AppShell'
 import { Toaster } from '@/components/ui/sonner'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { useNavigationTimeout } from '@/lib/hooks/useNavigationTimeout'
 
 export default function AppLayout({
   children,
@@ -15,6 +16,9 @@ export default function AppLayout({
   const router = useRouter()
   const pathname = usePathname()
   const { user, loading, role, roleLoading, permissions } = useAuth()
+  
+  // Ativar timeout global de navegação
+  useNavigationTimeout()
   const [queryClient] = useState(
     () =>
       new QueryClient({
