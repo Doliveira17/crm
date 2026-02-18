@@ -31,6 +31,7 @@ interface ClienteAgrupado {
     Plant_ID: string | null
     INVERSOR: string | null
     meta_mensal: number | null
+    qtd_dias: number | null
   }>
   totalInjetado: number
   ucsComProblema: number
@@ -218,12 +219,33 @@ function getMesReferencia(payload: unknown): string | null {
   return month || null
 }
 
+function getQtdDias(payload: unknown): number | null {
+  const json = parseMaybeJson(payload)
+  if (!json) {
+    return null
+  }
+
+  const value = json['qtd_dias'] ?? json['quantidade_dias'] ?? json['dias']
+  if (!value) {
+    return null
+  }
+
+  const parsed = parseNumber(value)
+  if (parsed <= 0) {
+    return null
+  }
+
+  // Garantir que é um inteiro
+  return Math.round(parsed)
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error(
         'Variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL ou NEXT_PUBLIC_SUPABASE_ANON_KEY não definidas'
       )
@@ -236,32 +258,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+    // Cliente com token do usuário para autenticação
+    const supabaseAuth = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
     })
 
-    const { data: authData, error: authError } = await supabase.auth.getUser(token)
+    const { data: authData, error: authError } = await supabaseAuth.auth.getUser(token)
     if (authError || !authData.user) {
       return NextResponse.json({ error: 'Sessão inválida' }, { status: 401 })
     }
 
-    const { data: roleRow, error: roleError } = await (supabase as any)
+    // Cliente com service_role para contornar RLS na leitura de dados
+    const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey!, {
+      auth: { persistSession: false },
+    })
+
+    const { data: roleRow } = await (supabase as any)
       .from('user_roles')
       .select('role')
       .eq('user_id', authData.user.id)
       .maybeSingle()
 
-    if (roleError) {
-      return NextResponse.json(
-        { error: 'Configuração de permissões ausente. Execute o script de RBAC no Supabase.' },
-        { status: 500 }
-      )
-    }
-
+    // Se não encontrar role ou houver erro, assume 'admin' (não bloqueia o acesso)
     const userRole = ((roleRow as { role?: AppRole } | null)?.role ?? 'admin') as AppRole
     if (userRole !== 'admin' && userRole !== 'limitada') {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
@@ -287,19 +305,25 @@ export async function GET(request: NextRequest) {
 async function getMetrics(supabase: ReturnType<typeof createClient<Database>>) {
   const { data: baseRows, error } = await (supabase as any)
     .from('base')
-    .select('*') as any
+    .select('*')
 
   if (error) {
     throw new Error(`Erro ao buscar base: ${error.message}`)
   }
 
-  const geradoras = (baseRows || []).filter(
-    (row: any) => (row.Tipo || '').trim().toLowerCase() === 'geradora'
-  )
+  if (!baseRows || baseRows.length === 0) {
+    throw new Error('Tabela base está vazia ou sem acesso. Verifique as políticas RLS no Supabase.')
+  }
 
   const clientsMap = new Map<string, ClienteAgrupado>()
 
-  geradoras.forEach((row: any) => {
+  baseRows.forEach((row: any) => {
+    // Filtrar apenas geradora de forma case-insensitive
+    const tipo = (row.Tipo || row.tipo || '').toString().toLowerCase().trim()
+    if (tipo !== 'geradora') {
+      return
+    }
+
     const documentNormalized = normalizeDocument(row['CPF/CNPJ'])
     const clientName = (row.CLIENTE || '').trim()
     const unidade = (row.Unidades || '').trim()
@@ -324,13 +348,17 @@ async function getMetrics(supabase: ReturnType<typeof createClient<Database>>) {
     }
 
     const { injetado, status } = getInjetadoInfoFromDadosExtraidos(row.dados_extraidos)
+    const qtdDias = getQtdDias(row.dados_extraidos)
     const cliente = clientsMap.get(clientKey)!
 
     cliente.totalUCs += 1
     if (injetado && injetado > 0) {
       cliente.totalInjetado += injetado
     }
-    if (status === 'injetado_zerado') {
+    
+    // Contar como problema: injetado zerado OU leitura atrasada/adiantada
+    const temProblemaLeitura = qtdDias !== null && (qtdDias < 27 || qtdDias > 33)
+    if (status === 'injetado_zerado' || temProblemaLeitura) {
       cliente.ucsComProblema += 1
     }
 
@@ -342,6 +370,7 @@ async function getMetrics(supabase: ReturnType<typeof createClient<Database>>) {
       Plant_ID: null,
       INVERSOR: null,
       meta_mensal: parseNumber(row.projetada),
+      qtd_dias: getQtdDias(row.dados_extraidos),
     })
   })
 

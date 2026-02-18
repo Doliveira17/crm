@@ -23,7 +23,7 @@ import { ClientesVinculadosSection } from './ClientesVinculadosSection'
 
 interface ContatoFormProps {
   initialData?: Partial<ContatoFormData>
-  onSubmit: (data: ContatoFormData) => void
+  onSubmit: (data: ContatoFormData) => void | Promise<void>
   onCancel: () => void
   loading?: boolean
   hideClientsSection?: boolean
@@ -105,12 +105,16 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault()
         if (!isSubmitting) {
-          handleSubmit((data: any) => {
+          handleSubmit(async (data: any) => {
             setIsSubmitting(true)
-            onSubmit({
-              ...data,
-              clientes_vinculados: clientesVinculados,
-            }).finally(() => setIsSubmitting(false))
+            try {
+              await Promise.resolve(onSubmit({
+                ...data,
+                clientes_vinculados: clientesVinculados,
+              }))
+            } finally {
+              setIsSubmitting(false)
+            }
           })()
         }
       }
@@ -118,7 +122,7 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleSubmit, onSubmit, isSubmitting])
+  }, [handleSubmit, onSubmit, isSubmitting, clientesVinculados])
 
   // Detectar mudanças no formulário
   useEffect(() => {

@@ -60,6 +60,7 @@ interface UC {
   Plant_ID: string | null
   INVERSOR: string | null
   meta_mensal: number | null
+  qtd_dias: number | null
 }
 
 interface ClienteAgrupado {
@@ -160,9 +161,23 @@ export default function FaturasDashboardPage() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const isFirstLoad = useRef(true)
   const previousDataRef = useRef<string | null>(null)
+  const cacheRef = useRef<{ data: ApiResponse | null; timestamp: number }>({
+    data: null,
+    timestamp: 0
+  })
+  const CACHE_DURATION = 30000 // 30 segundos de cache
 
   const fetchData = useCallback(async (forceRefresh = false) => {
     try {
+      // ⚡ Otimização: Verificar cache antes de fazer requisição
+      const agora = new Date().getTime()
+      if (!forceRefresh && cacheRef.current.data && (agora - cacheRef.current.timestamp) < CACHE_DURATION) {
+        console.log(`✅ Usando cache (válido por ${Math.round((CACHE_DURATION - (agora - cacheRef.current.timestamp)) / 1000)}s)`)
+        setData(cacheRef.current.data)
+        setLoading(false)
+        return
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -176,6 +191,7 @@ export default function FaturasDashboardPage() {
         ? `/api/faturas/metrics?force=${timestamp}`
         : `/api/faturas/metrics?t=${timestamp}`
 
+      console.log('⏳ Buscando dados do servidor...')
       const response = await fetch(url, {
         cache: 'no-store',
         headers: {
@@ -187,11 +203,22 @@ export default function FaturasDashboardPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao buscar dados')
+        let errMsg = `HTTP ${response.status}`
+        try {
+          const errBody = await response.json()
+          errMsg = errBody.error || errMsg
+        } catch {}
+        throw new Error(errMsg)
       }
 
       const apiData: ApiResponse = await response.json()
       
+      // ⚡ Salvar no cache
+      cacheRef.current = {
+        data: apiData,
+        timestamp: new Date().getTime()
+      }
+
       // Comparar com os dados anteriores para evitar re-renders desnecessários
       const dataString = JSON.stringify(apiData)
       if (previousDataRef.current !== dataString) {
@@ -263,14 +290,24 @@ export default function FaturasDashboardPage() {
           const chaveUc = `${documentoNormalizado}:${uc.uc}`
           const validacao = ucsValidacao.get(chaveUc)
 
-          // Se está em "Validando" mas agora o injetado > 0, resolver para Verde
-          if (validacao?.estado === 'Validando' && uc.status === 'ok') {
-            ucsParaResolver.push({
-              documento: documentoNormalizado,
-              uc: uc.uc,
-              chaveUc,
-              historicoAtual: validacao.historico || []
-            })
+          // Se está em "Validando", verificar se deve resolver para Verde
+          if (validacao?.estado === 'Validando') {
+            // Verificar se injetado está OK (> 0)
+            const injetadoOk = uc.status === 'ok'
+            
+            // Verificar se qtd_dias está na faixa normal (27-33)
+            const diasNum = uc.qtd_dias ? Number(uc.qtd_dias) : null
+            const diasOk = diasNum !== null && diasNum >= 27 && diasNum <= 33
+            
+            // Se AMBOS injetado > 0 E dias estão OK, resolver para Verde
+            if (injetadoOk && diasOk) {
+              ucsParaResolver.push({
+                documento: documentoNormalizado,
+                uc: uc.uc,
+                chaveUc,
+                historicoAtual: validacao.historico || []
+              })
+            }
           }
         })
       })
@@ -348,8 +385,10 @@ export default function FaturasDashboardPage() {
 
   // Marcar UC como "Validando" quando clicar em UC vermelha
   const marcarUcComoValidando = async (cpfCnpj: string | null, uc: UC) => {
+    console.log('🔴 CLIQUE DETECTADO! CPF:', cpfCnpj, 'UC:', uc.uc, 'Status:', uc.status)
+    
     if (!cpfCnpj) {
-      console.warn('❌ Sem CPF/CNPJ')
+      console.warn('❌ Sem CPF/CNPJ - não vai processar')
       return
     }
 
@@ -358,6 +397,8 @@ export default function FaturasDashboardPage() {
 
     try {
       console.log(`⏳ Marcando UC ${uc.uc} como Validando...`)
+      console.log(`📋 Chave completa: ${chaveUc}`)
+      console.log(`📋 Documento normalizado: ${documentoNormalizado}`)
 
       // Formatar data como DD/MM/YYYY
       const agora = new Date()
@@ -378,6 +419,8 @@ export default function FaturasDashboardPage() {
         }
       ]
 
+      console.log('📝 Histórico novo:', novoHistorico)
+
       // ✅ ATUALIZAR ESTADO LOCAL IMEDIATAMENTE
       setUcsValidacao(prev => {
         const novoMapa = new Map(prev)
@@ -385,35 +428,39 @@ export default function FaturasDashboardPage() {
           estado: 'Validando',
           historico: novoHistorico
         })
+        console.log('✅ Estado local atualizado! Total de UCs em validação:', novoMapa.size)
         return novoMapa
       })
+
+      console.log('⏳ Enviando para banco de dados...')
 
       // Atualizar ou inserir no banco
       const { data, error } = await (supabase as any)
         .from('crm_ucs_validacao')
-        .upsert({
-          documento: documentoNormalizado,
-          uc: uc.uc,
-          estado_de_chamado: 'Validando',
-          historico_validacao: novoHistorico
-        })
+        .upsert(
+          {
+            documento: documentoNormalizado,
+            uc: uc.uc,
+            estado_de_chamado: 'Validando',
+            historico_validacao: novoHistorico
+          },
+          { onConflict: 'documento,uc' }
+        )
+        .select()
 
       if (error) {
         console.error('❌ Erro ao atualizar UC no banco:', error)
-        console.error('❌ Detalhes do erro:', error.message, error.code)
+        console.error('❌ Código do erro:', error.code)
+        console.error('❌ Mensagem do erro:', error.message)
+        console.error('❌ Detalhes completos:', error)
         return
       }
 
       console.log(`✅ UC ${uc.uc} marcada como Validando em ${dataFormatada}`)
-      console.log('✅ Dados salvos no banco:', { documento: documentoNormalizado, uc: uc.uc, estado: 'Validando' })
-      
-      // Forçar refresh em background
-      setTimeout(() => {
-        void fetchData(true)
-      }, 300)
+      console.log('✅ Resposta do banco:', data)
       
     } catch (erro) {
-      console.error('❌ Erro ao marcar UC:', erro)
+      console.error('❌ ERRO CRÍTICO ao marcar UC:', erro)
     }
   }
 
@@ -464,21 +511,47 @@ export default function FaturasDashboardPage() {
   // UCs com problemas para a sidebar (excluindo UCs em validação)
   const ucsComProblemas = useMemo(() => {
     const clientes = data?.clientesAgrupados ?? []
-    const problemas: Array<{ uc: string; cliente: string; injetado: number | null }> = []
+    const problemas: Array<{ uc: string; cliente: string; injetado: number | null; tipo: 'injetado_zerado' | 'leitura_adiantada' | 'leitura_atrasada'; dias?: number }> = []
     
     clientes.forEach((cliente) => {
       cliente.ucs.forEach((uc) => {
+        const documentoNormalizado = (cliente.cpfCnpj || cliente.cliente).replace(/[.\-\/]/g, '')
+        const chaveUc = `${documentoNormalizado}:${uc.uc}`
+        const estadoUc = ucsValidacao.get(chaveUc)
+        
+        // Só adiciona como problema se NÃO estiver em validação
+        if (estadoUc && estadoUc.estado === 'Validando') {
+          return
+        }
+        
+        // Injetado zerado
         if (uc.status === 'injetado_zerado') {
-          // Normalizar documento igual ao salvamento no banco (sem pontuação)
-          const documentoNormalizado = (cliente.cpfCnpj || cliente.cliente).replace(/[.\-\/]/g, '')
-          const chaveUc = `${documentoNormalizado}:${uc.uc}`
-          const estadoUc = ucsValidacao.get(chaveUc)
-          // Só adiciona como problema se NÃO estiver em validação
-          if (!estadoUc || estadoUc.estado !== 'Validando') {
+          problemas.push({
+            uc: uc.uc,
+            cliente: cliente.cliente,
+            injetado: uc.injetado,
+            tipo: 'injetado_zerado'
+          })
+        }
+        
+        // Leitura adiantada ou atrasada
+        if (uc.qtd_dias !== null) {
+          const diasNum = Number(uc.qtd_dias)
+          if (diasNum < 27) {
             problemas.push({
               uc: uc.uc,
               cliente: cliente.cliente,
-              injetado: uc.injetado
+              injetado: uc.injetado,
+              tipo: 'leitura_adiantada',
+              dias: diasNum
+            })
+          } else if (diasNum > 33) {
+            problemas.push({
+              uc: uc.uc,
+              cliente: cliente.cliente,
+              injetado: uc.injetado,
+              tipo: 'leitura_atrasada',
+              dias: diasNum
             })
           }
         }
@@ -924,7 +997,6 @@ export default function FaturasDashboardPage() {
                   </div>
                   <span>UCs com Problemas</span>
                 </CardTitle>
-                <CardDescription className="text-xs">Injetado zerado</CardDescription>
               </CardHeader>
               <CardContent className="pt-0 pb-3">
                 <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
@@ -944,14 +1016,25 @@ export default function FaturasDashboardPage() {
                         <div className="text-[10px] font-semibold text-red-700 dark:text-red-400 truncate mb-0.5">
                           {item.cliente}
                         </div>
-                        <div className="text-xs font-mono font-bold truncate" title={item.uc}>
+                        <div className="text-xs font-mono font-bold truncate mb-1" title={item.uc}>
                           {item.uc}
+                        </div>
+                        <div className="text-[9px] text-red-600 dark:text-red-300 font-medium">
+                          {item.tipo === 'injetado_zerado' && 'Injetado zerado'}
+                          {item.tipo === 'leitura_adiantada' && `Leitura adiantada ${item.dias} dias`}
+                          {item.tipo === 'leitura_atrasada' && `Leitura atrasada ${item.dias} dias`}
                         </div>
                       </div>
                       <div className="flex-shrink-0">
-                        <Badge variant="destructive" className="text-[10px] px-2 py-0.5 font-semibold">
-                          0,00 kWh
-                        </Badge>
+                        {item.tipo === 'injetado_zerado' ? (
+                          <Badge variant="destructive" className="text-[10px] px-2 py-0.5 font-semibold">
+                            0,00 kWh
+                          </Badge>
+                        ) : (
+                          <Badge className="text-[10px] px-2 py-0.5 font-semibold bg-blue-600 hover:bg-blue-700">
+                            {item.tipo === 'leitura_adiantada' ? '⏰ Adiantada' : '⏱️ Atrasada'}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1034,6 +1117,23 @@ export default function FaturasDashboardPage() {
               const taxa = cliente.totalUCs > 0 ? (cliente.ucsComProblema / cliente.totalUCs) * 100 : 0
               const temProblema = cliente.ucsComProblema > 0
               
+              // Calcular dias totais fora da faixa (27-33)
+              const diasTotaisAdiantados = cliente.ucs.reduce((total, uc) => {
+                const diasNum = uc.qtd_dias ? Number(uc.qtd_dias) : null
+                if (diasNum !== null && diasNum < 27) {
+                  return total + (27 - diasNum)
+                }
+                return total
+              }, 0)
+              
+              const diasTotaisAtrasados = cliente.ucs.reduce((total, uc) => {
+                const diasNum = uc.qtd_dias ? Number(uc.qtd_dias) : null
+                if (diasNum !== null && diasNum > 33) {
+                  return total + (diasNum - 33)
+                }
+                return total
+              }, 0)
+              
               // Contar UCs em validação para este cliente
               const ucsValidandoCliente = cliente.ucs.filter(uc => {
                 const chaveUc = `${cliente.cpfCnpj?.replace(/[.\-\/]/g, '')}:${uc.uc}`
@@ -1095,6 +1195,12 @@ export default function FaturasDashboardPage() {
                           </div>
                           <CardDescription className="flex flex-wrap gap-x-2.5 gap-y-1 text-xs">
                             <span className="font-semibold text-foreground">{cliente.totalUCs} UCs</span>
+                            {diasTotaisAdiantados > 0 && (
+                              <span className="text-blue-600 font-semibold">{diasTotaisAdiantados} dia{diasTotaisAdiantados !== 1 ? 's' : ''} adiantada</span>
+                            )}
+                            {diasTotaisAtrasados > 0 && (
+                              <span className="text-red-600 font-semibold">{diasTotaisAtrasados} dia{diasTotaisAtrasados !== 1 ? 's' : ''} atrasada</span>
+                            )}
                             <span className="text-emerald-600 font-semibold">{cliente.ucsOk} OK</span>
                             {cliente.ucsSemDados > 0 && (
                               <span className="text-gray-500 font-semibold">{cliente.ucsSemDados} s/dados</span>
@@ -1161,39 +1267,57 @@ export default function FaturasDashboardPage() {
                           const chaveUc = `${cliente.cpfCnpj?.replace(/[.\-\/]/g, '')}:${uc.uc}` 
                           const validacao = ucsValidacao.get(chaveUc)
                           const estadoUc = validacao?.estado || null // null (vermelho), 'Validando' (amarelo), 'Verde' (verde)
+                          
+                          // Verificar se qtd_dias está fora da faixa válida (27-33)
+                          const diasNum = uc.qtd_dias ? Number(uc.qtd_dias) : null
+                          const leituraAdiantada = diasNum !== null && diasNum < 27
+                          const leituraAtrasada = diasNum !== null && diasNum > 33
 
                           return (
                             <div
                               key={`${uc.uc}-${ucIndex}`}
                               onClick={() => {
-                                // Se vermelho, marcar como validando com single click
-                                if (uc.status === 'injetado_zerado' && !estadoUc) {
+                                const temProblema = uc.status === 'injetado_zerado' || leituraAtrasada || leituraAdiantada
+                                // Verde não pode ser alterado para Validando
+                                if (estadoUc === 'Verde') {
+                                  return
+                                }
+                                // Só permite marcar como Validando se tiver problema (vermelho/azul)
+                                if (!estadoUc && temProblema) {
                                   void marcarUcComoValidando(cliente.cpfCnpj, uc)
-                                } else {
-                                  // Senão, abrir diálogo
+                                } else if (estadoUc === 'Validando') {
                                   setUcDialog({ cliente: cliente.cliente, uc })
                                 }
                               }}
                               className={cn(
-                                'group relative p-3 rounded-lg border-2 cursor-pointer transition-all duration-200',
-                                'hover:shadow-lg hover:scale-105 active:scale-95',
+                                'group relative p-3 rounded-lg border-2 transition-all duration-200',
+                                // Verde não é clicável
+                                estadoUc === 'Verde' ? 'cursor-default' : 'cursor-pointer hover:shadow-lg hover:scale-105 active:scale-95',
+                                // Sem problema e sem estado: não é clicável (ok/sem_dados sem problema de dias)
+                                !estadoUc && uc.status !== 'injetado_zerado' && !leituraAtrasada && !leituraAdiantada ? 'cursor-default' : '',
                                 'flex flex-col gap-2',
+                                // Se tem leitura atrasada, prioriza com vermelho
+                                leituraAtrasada && 'bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20',
+                                leituraAtrasada && 'border-red-400 dark:border-red-600 hover:border-red-500',
+                                // Se tem leitura adiantada, com azul
+                                !leituraAtrasada && leituraAdiantada && 'bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20',
+                                !leituraAtrasada && leituraAdiantada && 'border-blue-400 dark:border-blue-600 hover:border-blue-500',
                                 // Estados baseados em validacao + status
-                                estadoUc === 'Validando' && 'bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20',
-                                estadoUc === 'Validando' && 'border-amber-400 dark:border-amber-600 hover:border-amber-500',
-                                estadoUc === 'Verde' && 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20',
-                                estadoUc === 'Verde' && 'border-emerald-400 dark:border-emerald-600 hover:border-emerald-500',
+                                !leituraAtrasada && !leituraAdiantada && estadoUc === 'Validando' && 'bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20',
+                                !leituraAtrasada && !leituraAdiantada && estadoUc === 'Validando' && 'border-amber-400 dark:border-amber-600 hover:border-amber-500',
+                                !leituraAtrasada && !leituraAdiantada && estadoUc === 'Verde' && 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20',
+                                !leituraAtrasada && !leituraAdiantada && estadoUc === 'Verde' && 'border-emerald-400 dark:border-emerald-600 hover:border-emerald-500',
                                 // Se não tem validacao, usar status original
-                                !estadoUc && uc.status === 'ok' && 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20',
-                                !estadoUc && uc.status === 'ok' && 'border-emerald-300 dark:border-emerald-700 hover:border-emerald-500',
-                                !estadoUc && uc.status === 'injetado_zerado' && 'bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20',
-                                !estadoUc && uc.status === 'injetado_zerado' && 'border-red-300 dark:border-red-700 hover:border-red-500',
-                                !estadoUc && uc.status === 'sem_dados' && 'bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900/30 dark:to-gray-800/20',
-                                !estadoUc && uc.status === 'sem_dados' && 'border-gray-300 dark:border-gray-700 hover:border-gray-500'
+                                !leituraAtrasada && !leituraAdiantada && !estadoUc && uc.status === 'ok' && 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20',
+                                !leituraAtrasada && !leituraAdiantada && !estadoUc && uc.status === 'ok' && 'border-emerald-300 dark:border-emerald-700 hover:border-emerald-500',
+                                !leituraAtrasada && !leituraAdiantada && !estadoUc && uc.status === 'injetado_zerado' && 'bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20',
+                                !leituraAtrasada && !leituraAdiantada && !estadoUc && uc.status === 'injetado_zerado' && 'border-red-300 dark:border-red-700 hover:border-red-500',
+                                !leituraAtrasada && !leituraAdiantada && !estadoUc && uc.status === 'sem_dados' && 'bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900/30 dark:to-gray-800/20',
+                                !leituraAtrasada && !leituraAdiantada && !estadoUc && uc.status === 'sem_dados' && 'border-gray-300 dark:border-gray-700 hover:border-gray-500'
                               )}
                             >
                               {/* UC Number */}
-                              <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
                                     UC
@@ -1205,11 +1329,13 @@ export default function FaturasDashboardPage() {
                                 {/* Status Indicator */}
                                 <div className={cn(
                                   'w-2 h-2 rounded-full flex-shrink-0',
-                                  estadoUc === 'Validando' && 'bg-amber-500',
-                                  estadoUc === 'Verde' && 'bg-emerald-500',
-                                  !estadoUc && uc.status === 'ok' && 'bg-emerald-500',
-                                  !estadoUc && uc.status === 'injetado_zerado' && 'bg-red-500',
-                                  !estadoUc && uc.status === 'sem_dados' && 'bg-gray-400'
+                                  leituraAtrasada && 'bg-red-500',
+                                  !leituraAtrasada && leituraAdiantada && 'bg-blue-500',
+                                  !leituraAtrasada && !leituraAdiantada && estadoUc === 'Validando' && 'bg-amber-500',
+                                  !leituraAtrasada && !leituraAdiantada && estadoUc === 'Verde' && 'bg-emerald-500',
+                                  !leituraAtrasada && !leituraAdiantada && !estadoUc && uc.status === 'ok' && 'bg-emerald-500',
+                                  !leituraAtrasada && !leituraAdiantada && !estadoUc && uc.status === 'injetado_zerado' && 'bg-red-500',
+                                  !leituraAtrasada && !leituraAdiantada && !estadoUc && uc.status === 'sem_dados' && 'bg-gray-400'
                                 )} />
                               </div>
 
@@ -1229,6 +1355,20 @@ export default function FaturasDashboardPage() {
                                   {uc.status === 'sem_dados' ? 'Sem dados' : 'kWh'}
                                 </div>
                               </div>
+
+                              {/* Dias Information */}
+                              {uc.qtd_dias !== null && (
+                                <div className={cn(
+                                  'text-center text-[10px] font-semibold py-1.5 rounded-md',
+                                  leituraAtrasada 
+                                    ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                                    : leituraAdiantada
+                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                    : 'bg-muted text-muted-foreground'
+                                )}>
+                                  {uc.qtd_dias} dias
+                                </div>
+                              )}
 
                               {/* Status Badge */}
                               <Badge
@@ -1320,6 +1460,24 @@ export default function FaturasDashboardPage() {
                   {ucDialog.uc.status === 'sem_dados' ? '' : ' kWh'}
                 </span>
               </div>
+              {ucDialog.uc.qtd_dias !== null && (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Período de leitura</span>
+                  <span className={cn(
+                    'font-medium font-mono',
+                    Number(ucDialog.uc.qtd_dias) < 27 && 'text-blue-600 dark:text-blue-400 font-bold',
+                    Number(ucDialog.uc.qtd_dias) > 33 && 'text-red-600 dark:text-red-400 font-bold'
+                  )}>
+                    {Number(ucDialog.uc.qtd_dias) < 27 ? 'Adiantada' : Number(ucDialog.uc.qtd_dias) > 33 ? 'Atrasada' : 'Normal'} {ucDialog.uc.qtd_dias} dias
+                    {Number(ucDialog.uc.qtd_dias) < 27 && (
+                      <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">📅 Leitura antecipada</span>
+                    )}
+                    {Number(ucDialog.uc.qtd_dias) > 33 && (
+                      <span className="ml-2 text-xs text-red-600 dark:text-red-400">⚠️ Leitura atrasada</span>
+                    )}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between gap-3">
                 <span className="text-muted-foreground">Meta mensal</span>
                 <span className="font-medium tabular-nums">
