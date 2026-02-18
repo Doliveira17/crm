@@ -628,8 +628,8 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
                     <div className="bg-white border border-slate-300 p-4 rounded-lg">
                       <div className="text-sm font-semibold text-slate-900">Pessoa criada</div>
                       <div className="text-xs text-slate-500 mt-1">
-                        {initialData?.created_at
-                          ? new Date(initialData.created_at).toLocaleDateString('pt-BR', {
+                        {(initialData as any)?.created_at
+                          ? new Date((initialData as any).created_at).toLocaleDateString('pt-BR', {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric',
@@ -641,13 +641,13 @@ export function ContatoForm({ initialData, onSubmit, onCancel, loading, hideClie
                     </div>
                   </div>
 
-                  {initialData?.updated_at && initialData.updated_at !== initialData.created_at && (
+                  {(initialData as any)?.updated_at && (initialData as any).updated_at !== (initialData as any).created_at && (
                     <div className="relative pl-6">
                       <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-blue-500 border-3 border-white"></div>
                       <div className="bg-white border border-slate-300 p-4 rounded-lg">
                         <div className="text-sm font-semibold text-slate-900">Última atualização</div>
                         <div className="text-xs text-slate-500 mt-1">
-                          {new Date(initialData.updated_at).toLocaleDateString('pt-BR', {
+                          {new Date((initialData as any).updated_at).toLocaleDateString('pt-BR', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
