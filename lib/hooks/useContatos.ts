@@ -236,7 +236,7 @@ export function useUpdateContato() {
           console.log('🔵 Mapeamento das preferências para salvar:', JSON.stringify(updates, null, 2))
 
           // Fazer upsert em batch
-          const { error: batchError, data: batchData } = await supabase
+          const { error: batchError } = await supabase
             .from('crm_clientes_contatos')
             .upsert(updates, { onConflict: 'cliente_id,contato_id' })
 
@@ -248,7 +248,7 @@ export function useUpdateContato() {
             throw batchError
           }
           
-          console.log('🟢 Preferências salvas com sucesso:', batchData?.length, 'registros')
+          console.log('🟢 Preferências salvas com sucesso:', updates.length, 'registros')
         } catch (err) {
           console.error('🔴 Erro ao salvar preferências:', err)
           throw err
